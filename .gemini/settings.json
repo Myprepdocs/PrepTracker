@@ -1,0 +1,24 @@
+{
+ "contextFileName": "GEMINI.md",
+ "mcpServers": {
+    "context7": {
+      "httpUrl": "https://mcp.context7.com/mcp"
+    },
+      "sequential-thinking": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-sequential-thinking"
+        ]
+      },
+      "filesystem": {
+      "command": "npx",
+       "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/alanreeves/Desktop",
+        "/Users/alanreeves/GEMINI CODE PROJECTS"
+      ]
+    } 
+ }
+}

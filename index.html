@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Guide Dog PREP Tracker</title>
+    <meta name="description" content="Guide Dog Puppy Raising and Education Programme Progress Tracker">
+    <meta name="theme-color" content="#1E40AF">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="apple-touch-icon" href="icon-192.svg">
+    <link rel="icon" type="image/svg+xml" sizes="192x192" href="icon-192.svg">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="paw-icon">🐕‍🦺</div>
+            <h2>Guide Dog PREP Tracker</h2>
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app" class="app-container" style="display: none;">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">
+                    <span class="paw-icon">🐕‍🦺</span>
+                    PREP Tracker
+                </h1>
+                <button id="menuBtn" class="menu-btn">
+                    <span class="hamburger"></span>
+                </button>
+            </div>
+            <div id="puppyInfo" class="puppy-info" style="display: none;">
+                <span id="puppyName"></span> • <span id="puppyAge"></span>
+            </div>
+        </header>
+
+        <!-- Navigation Menu -->
+        <nav id="navMenu" class="nav-menu">
+            <div class="nav-content">
+                <button class="nav-item active" data-view="progress">
+                    <span class="nav-icon">📊</span>
+                    Progress Chart
+                </button>
+                <button class="nav-item" data-view="supporting">
+                    <span class="nav-icon">📚</span>
+                    Supporting Documents
+                </button>
+                <button class="nav-item" data-view="profile">
+                    <span class="nav-icon">🐾</span>
+                    Puppy Profile
+                </button>
+                <button class="nav-item" data-view="tools">
+                    <span class="nav-icon">🔧</span>
+                    Tools
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Puppy Profile Setup View -->
+            <div id="profileView" class="view">
+                <div class="view-header">
+                    <h2>Puppy Profile</h2>
+                    <p>Set up your puppy's information</p>
+                </div>
+                
+                <form id="profileForm" class="profile-form">
+                    <div class="form-group">
+                        <label for="puppyName">Puppy Name *</label>
+                        <input type="text" id="puppyNameInput" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="computerNumber">Computer Number</label>
+                        <input type="text" id="computerNumber" placeholder="e.g. GD12345">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dateOfBirth">Date of Birth *</label>
+                        <input type="date" id="dateOfBirth" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="breed">Breed</label>
+                        <select id="breed">
+                            <option value="">Select breed...</option>
+                            <option value="Labrador">Labrador</option>
+                            <option value="Golden Retriever">Golden Retriever</option>
+                            <option value="German Shepherd">German Shepherd</option>
+                            <option value="Labradoodle">Labradoodle</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="primary-btn">Save Profile</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Progress Chart View -->
+            <div id="progressView" class="view" style="display: none;">
+                <div class="view-header">
+                    <h2>Progress Chart</h2>
+                    <div class="age-selector">
+                        <button class="age-btn active" data-age="12weeks">12 Weeks</button>
+                        <button class="age-btn" data-age="juvenile">Juvenile</button>
+                        <button class="age-btn" data-age="adolescent">Adolescent</button>
+                        <button class="age-btn" data-age="12months">12 Months</button>
+                    </div>
+                </div>
+                
+                <div id="progressGrid" class="progress-grid">
+                    <!-- Training areas will be dynamically generated -->
+                </div>
+            </div>
+
+            <!-- Supporting Documents View -->
+            <div id="supportingView" class="view" style="display: none;">
+                <div class="view-header">
+                    <h2>Supporting Documents</h2>
+                    <p>Reference materials and guidance</p>
+                </div>
+                
+                <div class="documents-grid">
+                    <div class="document-card" data-doc="mouthing">
+                        <div class="document-icon">🦷</div>
+                        <h3>Mouthing</h3>
+                        <p>Tips to understand and manage mouthing behaviour</p>
+                        <div class="document-progress">
+                            <div class="progress-slider">
+                                <label class="slider-label">Progress: <span class="slider-value">0%</span></label>
+                                <input type="range" 
+                                       class="progress-range" 
+                                       min="0" 
+                                       max="100" 
+                                       step="5"
+                                       value="0">
+                                <div class="slider-markers">
+                                    <span>0%</span>
+                                    <span>25%</span>
+                                    <span>50%</span>
+                                    <span>75%</span>
+                                    <span>100%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="document-card" data-doc="whistle">
+                        <div class="document-icon">🎵</div>
+                        <h3>Whistle Association</h3>
+                        <p>How to form an association between whistle and food</p>
+                        <div class="document-progress">
+                            <div class="progress-slider">
+                                <label class="slider-label">Progress: <span class="slider-value">0%</span></label>
+                                <input type="range" 
+                                       class="progress-range" 
+                                       min="0" 
+                                       max="100" 
+                                       step="5"
+                                       value="0">
+                                <div class="slider-markers">
+                                    <span>0%</span>
+                                    <span>25%</span>
+                                    <span>50%</span>
+                                    <span>75%</span>
+                                    <span>100%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="document-card" data-doc="traffic">
+                        <div class="document-icon">🚗</div>
+                        <h3>Observing Traffic</h3>
+                        <p>Introduce sights and sounds of traffic safely</p>
+                        <div class="document-progress">
+                            <div class="progress-slider">
+                                <label class="slider-label">Progress: <span class="slider-value">0%</span></label>
+                                <input type="range" 
+                                       class="progress-range" 
+                                       min="0" 
+                                       max="100" 
+                                       step="5"
+                                       value="0">
+                                <div class="slider-markers">
+                                    <span>0%</span>
+                                    <span>25%</span>
+                                    <span>50%</span>
+                                    <span>75%</span>
+                                    <span>100%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="document-card" data-doc="harness">
+                        <div class="document-icon">🦮</div>
+                        <h3>T-Touch Harness</h3>
+                        <p>Fitting, maintaining, and working with harness</p>
+                        <div class="document-progress">
+                            <div class="progress-slider">
+                                <label class="slider-label">Progress: <span class="slider-value">0%</span></label>
+                                <input type="range" 
+                                       class="progress-range" 
+                                       min="0" 
+                                       max="100" 
+                                       step="5"
+                                       value="0">
+                                <div class="slider-markers">
+                                    <span>0%</span>
+                                    <span>25%</span>
+                                    <span>50%</span>
+                                    <span>75%</span>
+                                    <span>100%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="document-card" data-doc="adolescence">
+                        <div class="document-icon">🌱</div>
+                        <h3>Adolescence</h3>
+                        <p>Managing adolescent behaviours and expectations</p>
+                        <div class="document-progress">
+                            <div class="progress-slider">
+                                <label class="slider-label">Progress: <span class="slider-value">0%</span></label>
+                                <input type="range" 
+                                       class="progress-range" 
+                                       min="0" 
+                                       max="100" 
+                                       step="5"
+                                       value="0">
+                                <div class="slider-markers">
+                                    <span>0%</span>
+                                    <span>25%</span>
+                                    <span>50%</span>
+                                    <span>75%</span>
+                                    <span>100%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="document-card" data-doc="stairs">
+                        <div class="document-icon">🪜</div>
+                        <h3>Stairs and Steps</h3>
+                        <p>Safely navigate stairs and steps with your puppy</p>
+                        <div class="document-progress">
+                            <div class="progress-slider">
+                                <label class="slider-label">Progress: <span class="slider-value">0%</span></label>
+                                <input type="range" 
+                                       class="progress-range" 
+                                       min="0" 
+                                       max="100" 
+                                       step="5"
+                                       value="0">
+                                <div class="slider-markers">
+                                    <span>0%</span>
+                                    <span>25%</span>
+                                    <span>50%</span>
+                                    <span>75%</span>
+                                    <span>100%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tools View -->
+            <div id="toolsView" class="view" style="display: none;">
+                <div class="view-header">
+                    <h2>Tools</h2>
+                    <p>Backup, restore, and manage your data</p>
+                </div>
+                
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-icon">💾</div>
+                        <h3>Backup Data</h3>
+                        <p>Export your puppy's progress data</p>
+                        <button id="backupBtn" class="tool-btn">Export Backup</button>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-icon">📥</div>
+                        <h3>Restore Data</h3>
+                        <p>Import previously saved progress data</p>
+                        <button id="restoreBtn" class="tool-btn">Import Backup</button>
+                        <input type="file" id="fileInput" accept=".json" style="display: none;">
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-icon">🗑️</div>
+                        <h3>Reset Data</h3>
+                        <p>Clear all data and start fresh</p>
+                        <button id="resetBtn" class="tool-btn danger">Reset All Data</button>
+                    </div>
+                    
+                    <div class="tool-card">
+                        <div class="tool-icon">🔍</div>
+                        <h3>Debug Activities</h3>
+                        <p>Check stored activities (temporary debug tool)</p>
+                        <button id="debugBtn" class="tool-btn">Debug Activities</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Activity Detail Modal -->
+        <div id="activityModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Training Activity</h3>
+                    <button id="closeModal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="activity-details">
+                        <div class="form-group">
+                            <label for="activityDate">Date</label>
+                            <input type="date" id="activityDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="activityNotes">Notes</label>
+                            <textarea id="activityNotes" rows="4" placeholder="Add training notes, observations, or progress details..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="activityStatus">Progress Status</label>
+                            <select id="activityStatus">
+                                <option value="working">Working on it</option>
+                                <option value="proficient">Proficient</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveActivity" class="primary-btn">Save Activity</button>
+                    <button id="cancelActivity" class="secondary-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Messages -->
+        <div id="toastContainer" class="toast-container"></div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/app.js"></script>
+
+    <!-- PWA Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(registration => console.log('SW registered'))
+                .catch(error => console.log('SW registration failed'));
+        }
+    </script>
+</body>
+</html>

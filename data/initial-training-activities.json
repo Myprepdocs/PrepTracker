@@ -1,0 +1,301 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2024-12-10",
+  "trainingActivities": {
+    "play": [
+      {
+        "id": "play-001",
+        "title": "Managing Mouthing - Basic Redirection",
+        "description": "Redirect puppy onto appropriate items when mouthing occurs. Remember mouthing is normal puppy development.",
+        "ageRange": "12weeks",
+        "category": "Teaching Foundations",
+        "instructions": [
+          "Don't move your puppy when mouthing occurs - let them learn appropriate targets",
+          "Redirect onto environmentally enriching toys that your puppy enjoys",
+          "Use frozen toys, wet towelling frozen or stuffed KONG during teething (12-14 weeks)",
+          "If mouthing persists, your puppy may be too tired - let them rest"
+        ],
+        "goals": ["Redirect mouthing to appropriate items", "Build positive associations with toys"],
+        "notes": "From day 1. This is crucial foundation work for appropriate play."
+      },
+      {
+        "id": "play-002", 
+        "title": "Learning to Swap Items - Basic Exchange",
+        "description": "Teach puppy to be comfortable with human hands around their items and to swap items when asked.",
+        "ageRange": "12weeks",
+        "category": "Teaching Foundations",
+        "instructions": [
+          "Start with less favoured toys to build confidence",
+          "Approach calmly with similar value toy and initiate play with alternative",
+          "Have fun with the new toy, then pick up first toy and move away",
+          "Always ensure puppy has relaxed facial and body posture",
+          "If puppy shows lip curling, growling, or snapping - move away and contact advisor"
+        ],
+        "goals": ["Comfortable with hands near resources", "Willingly swap items"],
+        "safety": "Only adults registered with Guide Dogs should do this exercise"
+      },
+      {
+        "id": "play-003",
+        "title": "Tug Games - Stage 1: Engaging with Toy",
+        "description": "Introduce appropriate tug play with self-control and 'drop' foundation.",
+        "ageRange": "12weeks",
+        "category": "Teaching Foundations",
+        "instructions": [
+          "Use soft tug toy with bungee section, long enough to avoid bending",
+          "Hold toy out of reach until puppy has four paws on floor and is still",
+          "Say 'Okay' and lower toy to floor, move away from them",
+          "Let them catch it, play briefly, then YOU release the toy",
+          "Offer food rewards from hand in exchange for toy while eating",
+          "Celebrate their wins - let them control intensity and learn to tug harder"
+        ],
+        "goals": ["Appropriate tug engagement", "Building self-control", "Positive play association"],
+        "progressiveStages": true
+      },
+      {
+        "id": "play-004",
+        "title": "Tug Games - Stage 2: Teaching 'Drop'",
+        "description": "Introduce the 'drop' cue during tug play sessions.",
+        "ageRange": "juvenile",
+        "category": "Teaching Foundations", 
+        "instructions": [
+          "During play when not tugging hardest, offer food rewards from one hand",
+          "Keep hold of tug toy with other hand",
+          "When puppy opens mouth for food and drops toy, feed several rewards",
+          "Once reliable, add 'Drop' cue just before offering food",
+          "Continue playing after they finish food rewards",
+          "Keep treats nearby on shelf to prevent distraction from play"
+        ],
+        "goals": ["Reliable 'drop' response", "Continued enthusiasm for play"],
+        "progression": "From basic tug engagement"
+      },
+      {
+        "id": "play-005",
+        "title": "Interactive Food Toys - KONG Introduction",
+        "description": "Teach puppy to engage and remain engaged with food puzzle toys.",
+        "ageRange": "12weeks",
+        "category": "Teaching Foundations",
+        "instructions": [
+          "Fill KONG with puppy's kibble and walk to their bed",
+          "Show toy and wait for them to get on bed",
+          "Place down allowing few pieces to fall out",
+          "Stay close and help food fall out if puppy reluctant",
+          "Once engaged, move away",
+          "Progression: part-fill and wedge larger reward inside"
+        ],
+        "goals": ["Independent food toy engagement", "Mental stimulation"],
+        "variations": ["Soaked kibble", "KONG Wobbler", "Frozen for teething"]
+      }
+    ],
+    "toileting": [
+      {
+        "id": "toileting-001",
+        "title": "House Training Setup - First Week",
+        "description": "Set up puppy for toileting success with proper routine and management.",
+        "ageRange": "12weeks",
+        "category": "Managing for Success",
+        "instructions": [
+          "When puppy has accident indoors, don't move them - let them finish",
+          "Take puppy out every couple of times per hour",
+          "Also after waking, drinking, eating, or exercise/play",
+          "Limit outside time to 5 minutes maximum - focus on toileting not play",
+          "Have food rewards ready in pocket but not visible",
+          "Always supervise when in garden"
+        ],
+        "goals": ["Establish toileting area preference", "Build positive associations"],
+        "signs": ["Extra sniffing", "Circling", "Slightly dipped posture", "Loss of interest in activity"]
+      },
+      {
+        "id": "toileting-002", 
+        "title": "Teaching 'Busy-Busy' Cue - Stage 1",
+        "description": "Begin association between cue word and toileting action.",
+        "ageRange": "12weeks",
+        "category": "Teaching Foundations",
+        "instructions": [
+          "Wait for opportunities when puppy naturally relieving themselves",
+          "Say 'busy-busy' once they BEGIN to toilet (not before)",
+          "Use soft, encouraging tone",
+          "Give praise or food reward when finished",
+          "Continue for 2-3 weeks, every supervised toileting",
+          "Avoid repeating the phrase - only ask once"
+        ],
+        "goals": ["Link 'busy-busy' with toileting action", "Positive toileting experience"],
+        "duration": "2-3 weeks of consistent practice"
+      },
+      {
+        "id": "toileting-003",
+        "title": "Developing Cue Timing - Stage 2", 
+        "description": "Alter timing to say cue just before puppy toilets.",
+        "ageRange": "juvenile",
+        "category": "Teaching Foundations",
+        "instructions": [
+          "When confident puppy will relieve, say 'busy-busy' just before",
+          "Use their stage 1 understanding - they should respond immediately",
+          "Reward with food or praise when finished",
+          "Don't have food visible in hand",
+          "Only cue them once",
+          "Move to next stage when consistently getting response"
+        ],
+        "goals": ["Cue response before natural urge", "Reliable association"],
+        "progression": "Can take several weeks to master"
+      },
+      {
+        "id": "toileting-004",
+        "title": "Leash Relieving - Stage 4",
+        "description": "Teach puppy to toilet while on lead for guide dog preparation.",
+        "ageRange": "adolescent", 
+        "category": "Teaching Foundations",
+        "instructions": [
+          "Ensure puppy comfortable with lead in everyday scenarios",
+          "Choose familiar garden area where puppy toilets comfortably",
+          "Choose time when you know puppy due to toilet",
+          "Lengthen lead, keep loose with minimal tension", 
+          "Encourage puppy to walk in circles around you",
+          "Cue 'busy-busy' and reward for toileting"
+        ],
+        "goals": ["Toilet on lead", "Preparation for guide work"],
+        "importance": "Critical skill for guide dog matching"
+      },
+      {
+        "id": "toileting-005",
+        "title": "Different Surfaces - Stage 5",
+        "description": "Progress to toileting on various surfaces including hard surfaces.",
+        "ageRange": "12months",
+        "category": "Teaching Foundations", 
+        "instructions": [
+          "Start with surfaces similar to preferred surface",
+          "Use long lead length for turning room",
+          "Choose safe areas free from distractions",
+          "Progress gradually to hard surfaces",
+          "Apply leash relief techniques from Stage 4",
+          "Maintain positive associations"
+        ],
+        "goals": ["Flexible surface preferences", "Guide dog readiness"],
+        "rationale": "Guide dog owners may need dogs to toilet on different surfaces"
+      }
+    ],
+    "greeting": [
+      {
+        "id": "greeting-001",
+        "title": "Calm Settling with Known People",
+        "description": "Build foundation of calm behavior around familiar people.",
+        "ageRange": "12weeks",
+        "category": "Teaching Foundations",
+        "instructions": [
+          "Practice calm greetings with family members",
+          "Ignore jumping up behavior - turn away and avoid eye contact",
+          "Reward four paws on floor with attention and praise",
+          "Keep greetings low-key initially",
+          "Build duration of calm behavior before giving attention"
+        ],
+        "goals": ["Calm behavior with known people", "Foundation for greeting strangers"],
+        "milestone": "Settling well in company of people I know"
+      },
+      {
+        "id": "greeting-002",
+        "title": "Meeting Unfamiliar People",
+        "description": "Introduce puppy calmly to range of unfamiliar people including children.",
+        "ageRange": "juvenile",
+        "category": "Teaching Foundations",
+        "instructions": [
+          "Start with calm adults at distance",
+          "Have people ignore the puppy initially",
+          "Reward calm behavior around strangers",
+          "Gradually decrease distance as puppy stays calm",
+          "Introduce children in controlled circumstances",
+          "Always supervise interactions with children"
+        ],
+        "goals": ["Calm around strangers", "Positive associations with all people"],
+        "milestone": "Calmly met range of unfamiliar people including children"
+      }
+    ],
+    "manners": [
+      {
+        "id": "manners-001",
+        "title": "Name Recognition and Attention",
+        "description": "Teach puppy to respond to their name with attention.",
+        "ageRange": "12weeks", 
+        "category": "Teaching Foundations",
+        "instructions": [
+          "Say puppy's name once in happy voice",
+          "When they look at you, immediately reward",
+          "Practice in low distraction environments first",
+          "Gradually add mild distractions",
+          "Never repeat name multiple times",
+          "Always reward the look/attention"
+        ],
+        "goals": ["Reliable name response", "Foundation for all other training"],
+        "milestone": "I know my name"
+      },
+      {
+        "id": "manners-002",
+        "title": "Sit Using Lure",
+        "description": "Teach sit behavior using food lure guidance.",
+        "ageRange": "12weeks",
+        "category": "Teaching Foundations", 
+        "instructions": [
+          "Hold food lure just above puppy's nose",
+          "Slowly move lure back over their head",
+          "As bottom touches ground, reward immediately",
+          "Practice several times per session",
+          "Only use lure - don't push puppy into position",
+          "Keep sessions short and positive"
+        ],
+        "goals": ["Reliable sit with lure", "Foundation for verbal cue"],
+        "milestone": "I understand how to sit when using a lure"
+      },
+      {
+        "id": "manners-003",
+        "title": "Taking Food Politely",
+        "description": "Teach gentle food taking and impulse control.",
+        "ageRange": "12weeks",
+        "category": "Teaching Foundations",
+        "instructions": [
+          "Hold treat in closed fist near puppy",
+          "Wait for them to stop pawing/mouthing your hand", 
+          "The moment they back off or lick gently, open hand and reward",
+          "Practice with different types of treats",
+          "Build duration of patient waiting",
+          "Always reward gentle behavior"
+        ],
+        "goals": ["Gentle food taking", "Impulse control foundation"],
+        "milestone": "I am learning to take food politely"
+      }
+    ],
+    "walking": [
+      {
+        "id": "walking-001",
+        "title": "Lead and Collar Introduction",
+        "description": "Get puppy comfortable with wearing and having lead/collar handled.",
+        "ageRange": "12weeks",
+        "category": "Teaching Foundations",
+        "instructions": [
+          "Let puppy sniff and investigate collar/lead",
+          "Put collar on for very short periods initially",
+          "Reward calm acceptance with treats and praise",
+          "Gradually increase wearing duration",
+          "Practice putting on and taking off multiple times",
+          "Ensure puppy doesn't back away from equipment"
+        ],
+        "goals": ["Comfortable with equipment", "Foundation for lead walking"],
+        "milestone": "Comfortable having collar and lead put on and taken off"
+      },
+      {
+        "id": "walking-002",
+        "title": "Lead Walking at Home",
+        "description": "Begin lead walking practice in familiar home environment.",
+        "ageRange": "12weeks",
+        "category": "Teaching Foundations", 
+        "instructions": [
+          "Start with very short sessions in house",
+          "Let puppy choose direction initially",
+          "Reward when they walk beside you",
+          "Don't pull or drag - encourage with voice and treats",
+          "Practice in garden once comfortable indoors",
+          "Keep sessions positive and short"
+        ],
+        "goals": ["Acceptance of lead restraint", "Basic walking foundation"],
+        "milestone": "Started to learn to walk on lead at home"
+      }
+    ]
+  }
+}
