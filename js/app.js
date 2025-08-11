@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.13';
+        this.APP_VERSION = '1.0.15';
         this.currentView = 'puppies';
         this.currentAge = '12weeks';
         this.currentPuppyId = null;
@@ -312,7 +312,6 @@ class PREPTrackerApp {
             this.updatePuppyInfo();
             this.renderPuppyManagement();
             
-            console.log('Selected puppy:', this.puppyProfile);
         } catch (error) {
             console.error('Failed to select puppy:', error);
             this.showToast('Failed to select puppy: ' + error.message, 'error');
@@ -1327,8 +1326,10 @@ class PREPTrackerApp {
                 // Create new puppy
                 const newProfile = await window.storage.saveProfile(profileData);
                 
-                // Add to local array and select the new puppy
-                this.allProfiles.push(newProfile);
+                // Refresh the profiles array without changing current selection
+                this.allProfiles = await window.storage.getAllProfiles();
+                
+                // Select the new puppy
                 await this.selectPuppy(newProfile.id);
                 
                 this.showToast('New puppy added successfully', 'success');
