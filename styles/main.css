@@ -1503,6 +1503,21 @@ body {
     .toast {
         min-width: auto;
     }
+
+    .training-area .collapsible-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+
+    .training-area.active .collapsible-content {
+        max-height: 1500px; /* A large enough value to show all content */
+        transition: max-height 0.5s ease-in;
+    }
+
+    .training-header {
+        cursor: pointer;
+    }
 }
 
 @media (min-width: 600px) {

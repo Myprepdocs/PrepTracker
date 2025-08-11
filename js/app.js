@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.20';
+        this.APP_VERSION = '1.0.21';
         this.currentView = 'puppies';
         this.currentAge = '12weeks';
         this.currentPuppyId = null;
@@ -558,92 +558,94 @@ class PREPTrackerApp {
                     ${area.name}
                     <button class="complete-elearning" title="Complete e-learning">📁</button>
                 </div>
-                <div class="training-content">
-                    <div class="area-age-selector">
-                        <input type="radio" id="age-${area.id}-12weeks" name="age-${area.id}" value="12weeks" ${this.currentAge === '12weeks' ? 'checked' : ''}>
-                        <label for="age-${area.id}-12weeks">3</label>
-                        
-                        <input type="radio" id="age-${area.id}-juvenile" name="age-${area.id}" value="juvenile" ${this.currentAge === 'juvenile' ? 'checked' : ''}>
-                        <label for="age-${area.id}-juvenile">6</label>
-                        
-                        <input type="radio" id="age-${area.id}-adolescent" name="age-${area.id}" value="adolescent" ${this.currentAge === 'adolescent' ? 'checked' : ''}>
-                        <label for="age-${area.id}-adolescent">9</label>
-                        
-                        <input type="radio" id="age-${area.id}-12months" name="age-${area.id}" value="12months" ${this.currentAge === '12months' ? 'checked' : ''}>
-                        <label for="age-${area.id}-12months">12</label>
-                    </div>
-                    <div class="milestone-text">${milestone}</div>
-                    <div class="progress-slider">
-                        <label class="slider-label">Progress: <span class="slider-value">${progress?.value || 0}%</span></label>
-                        <input type="range" 
-                               class="progress-range" 
-                               min="0" 
-                               max="100" 
-                               step="5"
-                               value="${progress?.value || 0}" 
-                               data-area="${area.id}" 
-                               data-age="${this.currentAge}">
-                        <div class="slider-markers">
-                            <span>0%</span>
-                            <span>25%</span>
-                            <span>50%</span>
-                            <span>75%</span>
-                            <span>100%</span>
+                <div class="collapsible-content">
+                    <div class="training-content">
+                        <div class="area-age-selector">
+                            <input type="radio" id="age-${area.id}-12weeks" name="age-${area.id}" value="12weeks" ${this.currentAge === '12weeks' ? 'checked' : ''}>
+                            <label for="age-${area.id}-12weeks">3</label>
+                            
+                            <input type="radio" id="age-${area.id}-juvenile" name="age-${area.id}" value="juvenile" ${this.currentAge === 'juvenile' ? 'checked' : ''}>
+                            <label for="age-${area.id}-juvenile">6</label>
+                            
+                            <input type="radio" id="age-${area.id}-adolescent" name="age-${area.id}" value="adolescent" ${this.currentAge === 'adolescent' ? 'checked' : ''}>
+                            <label for="age-${area.id}-adolescent">9</label>
+                            
+                            <input type="radio" id="age-${area.id}-12months" name="age-${area.id}" value="12months" ${this.currentAge === '12months' ? 'checked' : ''}>
+                            <label for="age-${area.id}-12months">12</label>
+                        </div>
+                        <div class="milestone-text">${milestone}</div>
+                        <div class="progress-slider">
+                            <label class="slider-label">Progress: <span class="slider-value">${progress?.value || 0}%</span></label>
+                            <input type="range" 
+                                   class="progress-range" 
+                                   min="0" 
+                                   max="100" 
+                                   step="5"
+                                   value="${progress?.value || 0}" 
+                                   data-area="${area.id}" 
+                                   data-age="${this.currentAge}">
+                            <div class="slider-markers">
+                                <span>0%</span>
+                                <span>25%</span>
+                                <span>50%</span>
+                                <span>75%</span>
+                                <span>100%</span>
+                            </div>
+                        </div>
+                        <div class="training-actions">
+                            <button class="action-btn log-btn" data-area="${area.id}" data-age="${this.currentAge}">
+                                📝 Log
+                            </button>
+                            <button class="action-btn training-btn" data-area="${area.id}" data-age="${this.currentAge}">
+                                🎯 Training
+                            </button>
                         </div>
                     </div>
-                    <div class="training-actions">
-                        <button class="action-btn log-btn" data-area="${area.id}" data-age="${this.currentAge}">
-                            📝 Log
-                        </button>
-                        <button class="action-btn training-btn" data-area="${area.id}" data-age="${this.currentAge}">
-                            🎯 Training
-                        </button>
-                    </div>
-                </div>
-                <div class="progress-accordion" data-area="${area.id}" data-age="${this.currentAge}" style="display: none;">
-                    <div class="accordion-content">
-                        <div class="progress-log-section">
-                            <h4>Progress Log</h4>
-                            <div class="existing-entries" id="entries-${area.id}-${this.currentAge}">
-                                <!-- Existing entries will be loaded here -->
-                            </div>
-                            <div class="progress-log-form" style="display: none;">
-                                <div class="form-group">
-                                    <label for="logDate-${area.id}">Date</label>
-                                    <input type="date" id="logDate-${area.id}" class="log-date">
+                    <div class="progress-accordion" data-area="${area.id}" data-age="${this.currentAge}" style="display: none;">
+                        <div class="accordion-content">
+                            <div class="progress-log-section">
+                                <h4>Progress Log</h4>
+                                <div class="existing-entries" id="entries-${area.id}-${this.currentAge}">
+                                    <!-- Existing entries will be loaded here -->
                                 </div>
-                                <div class="form-group">
-                                    <label for="logNotes-${area.id}">Notes</label>
-                                    <textarea id="logNotes-${area.id}" class="log-notes" rows="4" placeholder="Add training notes, observations, or progress details..."></textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label for="logVideo-${area.id}">Video (Optional)</label>
-                                    <div class="video-upload-section">
-                                        <input type="file" id="logVideo-${area.id}" class="log-video" accept="video/*" style="display: none;">
-                                        <button type="button" class="video-upload-btn secondary-btn">
-                                            📹 Choose Video
-                                        </button>
-                                        <div class="video-preview" style="display: none;">
-                                            <div class="video-info">
-                                                <span class="video-file-name"></span>
-                                                <button type="button" class="remove-video-btn">&times;</button>
+                                <div class="progress-log-form" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="logDate-${area.id}">Date</label>
+                                        <input type="date" id="logDate-${area.id}" class="log-date">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="logNotes-${area.id}">Notes</label>
+                                        <textarea id="logNotes-${area.id}" class="log-notes" rows="4" placeholder="Add training notes, observations, or progress details..."></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="logVideo-${area.id}">Video (Optional)</label>
+                                        <div class="video-upload-section">
+                                            <input type="file" id="logVideo-${area.id}" class="log-video" accept="video/*" style="display: none;">
+                                            <button type="button" class="video-upload-btn secondary-btn">
+                                                📹 Choose Video
+                                            </button>
+                                            <div class="video-preview" style="display: none;">
+                                                <div class="video-info">
+                                                    <span class="video-file-name"></span>
+                                                    <button type="button" class="remove-video-btn">&times;</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="form-group">
+                                        <label for="logStatus-${area.id}">Progress Status</label>
+                                        <select id="logStatus-${area.id}" class="log-status">
+                                            <option value="working">Working on it</option>
+                                            <option value="proficient">Proficient</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="button" class="secondary-btn cancel-log-btn">Cancel</button>
+                                        <button type="button" class="primary-btn save-log-btn">Save</button>
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label for="logStatus-${area.id}">Progress Status</label>
-                                    <select id="logStatus-${area.id}" class="log-status">
-                                        <option value="working">Working on it</option>
-                                        <option value="proficient">Proficient</option>
-                                    </select>
-                                </div>
-                                <div class="form-actions">
-                                    <button type="button" class="secondary-btn cancel-log-btn">Cancel</button>
-                                    <button type="button" class="primary-btn save-log-btn">Save</button>
-                                </div>
+                                <button class="primary-btn add-entry-btn">Add New Entry</button>
                             </div>
-                            <button class="primary-btn add-entry-btn">Add New Entry</button>
                         </div>
                     </div>
                 </div>
@@ -668,6 +670,14 @@ class PREPTrackerApp {
     addProgressButtonHandlers(element, area) {
         const slider = element.querySelector('.progress-range');
         const sliderValue = element.querySelector('.slider-value');
+        const header = element.querySelector('.training-header');
+
+        // Accordion toggle for mobile
+        header.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                element.classList.toggle('active');
+            }
+        });
         
         // Handle age radio button changes (sync all areas when one is clicked)
         const ageRadios = element.querySelectorAll(`input[name="age-${area.id}"]`);
