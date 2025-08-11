@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.18';
+        this.APP_VERSION = '1.0.19';
         this.currentView = 'puppies';
         this.currentAge = '12weeks';
         this.currentPuppyId = null;
@@ -1360,14 +1360,15 @@ class PREPTrackerApp {
         const puppyInfo = document.getElementById('puppyInfo');
         const puppyName = document.getElementById('puppyName');
         const puppyAge = document.getElementById('puppyAge');
-        
+
         if (this.puppyProfile) {
+            const age = window.storage.calculateAge(this.puppyProfile.dateOfBirth);
             puppyName.textContent = this.puppyProfile.puppyName;
-            puppyAge.textContent = window.storage.formatAge(this.puppyProfile.dateOfBirth);
+            puppyAge.textContent = age.text;
             puppyInfo.style.display = 'block';
-            
+
             // Update current age based on puppy's actual age
-            this.currentAge = window.storage.calculateAge(this.puppyProfile.dateOfBirth);
+            this.currentAge = age.key;
             this.selectAge(this.currentAge);
         } else {
             puppyInfo.style.display = 'none';

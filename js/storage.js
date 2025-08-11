@@ -458,27 +458,58 @@ class StorageService {
 
     // Utility methods
     calculateAge(birthDate) {
-        const today = new Date();
-        const birth = new Date(birthDate);
-        const ageMs = today - birth;
-        const ageWeeks = Math.floor(ageMs / (1000 * 60 * 60 * 24 * 7));
-        
-        if (ageWeeks < 16) return '12weeks';
-        if (ageWeeks < 24) return 'juvenile';
-        if (ageWeeks < 40) return 'adolescent';
-        return '12months';
-    }
+        if (!birthDate) {
+            return { key: '12weeks', text: 'Unknown age' };
+        }
 
-    formatAge(birthDate) {
         const today = new Date();
         const birth = new Date(birthDate);
-        const ageMs = today - birth;
-        const ageWeeks = Math.floor(ageMs / (1000 * 60 * 60 * 24 * 7));
-        const ageMonths = Math.floor(ageWeeks / 4);
-        
-        if (ageWeeks < 8) return `${ageWeeks} weeks old`;
-        if (ageMonths < 12) return `${ageMonths} months old`;
-        return `${Math.floor(ageMonths / 12)} years, ${ageMonths % 12} months old`;
+
+        if (isNaN(birth.getTime())) {
+            return { key: '12weeks', text: 'Invalid date' };
+        }
+
+        let years = today.getFullYear() - birth.getFullYear();
+        let months = today.getMonth() - birth.getMonth();
+        let days = today.getDate() - birth.getDate();
+
+        if (days < 0) {
+            months--;
+            days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+        }
+
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+
+        const totalMonths = years * 12 + months;
+        const totalWeeks = Math.floor((today - birth) / (1000 * 60 * 60 * 24 * 7));
+
+        let ageKey;
+        if (totalWeeks < 16) {
+            ageKey = '12weeks';
+        } else if (totalWeeks < 24) {
+            ageKey = 'juvenile';
+        } else if (totalWeeks < 40) {
+            ageKey = 'adolescent';
+        } else {
+            ageKey = '12months';
+        }
+
+        let ageText;
+        if (totalMonths < 2) {
+            ageText = `${totalWeeks} weeks old`;
+        } else if (totalMonths < 12) {
+            ageText = `${totalMonths} months old`;
+        } else {
+            ageText = `${years} years, ${months} months old`;
+        }
+
+        return {
+            key: ageKey,
+            text: ageText
+        };
     }
 }
 
