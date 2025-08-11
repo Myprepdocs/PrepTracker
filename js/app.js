@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.7';
+        this.APP_VERSION = '1.0.10';
         this.currentView = 'profile';
         this.currentAge = '12weeks';
         this.puppyProfile = null;
@@ -291,17 +291,18 @@ class PREPTrackerApp {
     }
 
     async updateAllAreasForAge(selectedAge) {
-        // Update all radio buttons across all areas
-        document.querySelectorAll('input[name="global-age-selector"]').forEach(radio => {
-            radio.checked = radio.value === selectedAge;
-        });
-
-        // Update each training area's content
+        // Update each training area's content and radio buttons
         for (const area of this.trainingAreas) {
             const slider = document.querySelector(`input.progress-range[data-area="${area.id}"]`);
             if (slider) {
                 const areaElement = slider.closest('.training-area');
                 if (areaElement) {
+                    // Update radio buttons for this area
+                    const areaRadios = areaElement.querySelectorAll(`input[name="age-${area.id}"]`);
+                    areaRadios.forEach(radio => {
+                        radio.checked = radio.value === selectedAge;
+                    });
+                    
                     await this.updateAreaContent(areaElement, area, selectedAge);
                 }
             }
@@ -376,17 +377,17 @@ class PREPTrackerApp {
                 </div>
                 <div class="training-content">
                     <div class="area-age-selector">
-                        <input type="radio" id="age-${area.id}-12weeks" name="global-age-selector" value="12weeks" ${this.currentAge === '12weeks' ? 'checked' : ''}>
-                        <label for="age-${area.id}-12weeks">12 weeks</label>
+                        <input type="radio" id="age-${area.id}-12weeks" name="age-${area.id}" value="12weeks" ${this.currentAge === '12weeks' ? 'checked' : ''}>
+                        <label for="age-${area.id}-12weeks">12 wks</label>
                         
-                        <input type="radio" id="age-${area.id}-juvenile" name="global-age-selector" value="juvenile" ${this.currentAge === 'juvenile' ? 'checked' : ''}>
-                        <label for="age-${area.id}-juvenile">6 months</label>
+                        <input type="radio" id="age-${area.id}-juvenile" name="age-${area.id}" value="juvenile" ${this.currentAge === 'juvenile' ? 'checked' : ''}>
+                        <label for="age-${area.id}-juvenile">6 mnths</label>
                         
-                        <input type="radio" id="age-${area.id}-adolescent" name="global-age-selector" value="adolescent" ${this.currentAge === 'adolescent' ? 'checked' : ''}>
-                        <label for="age-${area.id}-adolescent">9 months</label>
+                        <input type="radio" id="age-${area.id}-adolescent" name="age-${area.id}" value="adolescent" ${this.currentAge === 'adolescent' ? 'checked' : ''}>
+                        <label for="age-${area.id}-adolescent">9 mnths</label>
                         
-                        <input type="radio" id="age-${area.id}-12months" name="global-age-selector" value="12months" ${this.currentAge === '12months' ? 'checked' : ''}>
-                        <label for="age-${area.id}-12months">12 months</label>
+                        <input type="radio" id="age-${area.id}-12months" name="age-${area.id}" value="12months" ${this.currentAge === '12months' ? 'checked' : ''}>
+                        <label for="age-${area.id}-12months">12 mnths</label>
                     </div>
                     <div class="milestone-text">${milestone}</div>
                     <div class="progress-slider">
@@ -470,14 +471,23 @@ class PREPTrackerApp {
             
             grid.appendChild(areaElement);
         }
+        
+        // Ensure radio buttons are properly checked after rendering
+        setTimeout(() => {
+            this.trainingAreas.forEach(area => {
+                document.querySelectorAll(`input[name="age-${area.id}"]`).forEach(radio => {
+                    radio.checked = radio.value === this.currentAge;
+                });
+            });
+        }, 0);
     }
 
     addProgressButtonHandlers(element, area) {
         const slider = element.querySelector('.progress-range');
         const sliderValue = element.querySelector('.slider-value');
         
-        // Handle age radio button changes (global across all areas)
-        const ageRadios = element.querySelectorAll('input[name="global-age-selector"]');
+        // Handle age radio button changes (sync all areas when one is clicked)
+        const ageRadios = element.querySelectorAll(`input[name="age-${area.id}"]`);
         ageRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
                 if (e.target.checked) {
