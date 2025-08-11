@@ -416,6 +416,48 @@ body {
     padding: var(--spacing-lg);
 }
 
+/* Area Age Selector (Radio Buttons) */
+.area-age-selector {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    flex-wrap: wrap;
+}
+
+.area-age-selector input[type="radio"] {
+    display: none;
+}
+
+.area-age-selector label {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-primary);
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    user-select: none;
+}
+
+.area-age-selector label:hover {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+    background: var(--bg-secondary);
+}
+
+.area-age-selector input[type="radio"]:checked + label {
+    background: var(--primary-gradient);
+    border-color: var(--primary-blue-dark);
+    color: var(--text-white);
+    box-shadow: var(--shadow-sm);
+}
+
 .milestone-text {
     color: var(--text-primary);
     margin-bottom: var(--spacing-lg);
@@ -517,16 +559,22 @@ body {
 }
 
 .complete-elearning {
-    width: 100%;
-    padding: var(--spacing-md);
+    width: 32px;
+    height: 32px;
+    padding: 0;
     background: var(--primary-gradient);
     color: var(--text-white);
     border: none;
-    border-radius: var(--radius-lg);
+    border-radius: 50%;
     font-weight: 600;
     cursor: pointer;
-    margin-bottom: var(--spacing-lg);
     transition: all var(--transition-fast);
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
 }
 
 .complete-elearning:hover {

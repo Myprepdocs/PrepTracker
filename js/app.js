@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.1';
+        this.APP_VERSION = '1.0.2';
         this.currentView = 'profile';
         this.currentAge = '12weeks';
         this.puppyProfile = null;
@@ -281,10 +281,37 @@ class PREPTrackerApp {
         document.querySelectorAll('.age-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        document.querySelector(`[data-age="${age}"]`).classList.add('active');
+        const ageBtn = document.querySelector(`[data-age="${age}"]`);
+        if (ageBtn) {
+            ageBtn.classList.add('active');
+        }
         
         // Re-render progress grid
         this.renderProgressGrid();
+    }
+
+    async handleAreaAgeChange(element, area, selectedAge) {
+        // Update milestone text for this specific area
+        const milestoneText = element.querySelector('.milestone-text');
+        milestoneText.textContent = area.milestones[selectedAge];
+        
+        // Load progress for this age
+        const progress = await window.storage.getProgress(area.id, selectedAge);
+        const slider = element.querySelector('.progress-range');
+        const sliderValue = element.querySelector('.slider-value');
+        
+        if (slider && sliderValue) {
+            const progressValue = progress?.value || 0;
+            slider.value = progressValue;
+            sliderValue.textContent = `${progressValue}%`;
+            slider.dataset.age = selectedAge;
+        }
+        
+        // Update action buttons data attributes
+        const actionButtons = element.querySelectorAll('.action-btn');
+        actionButtons.forEach(btn => {
+            btn.dataset.age = selectedAge;
+        });
     }
 
     async renderProgressGrid() {
@@ -301,9 +328,22 @@ class PREPTrackerApp {
                 <div class="training-header ${area.class}">
                     <span class="training-icon">${area.icon}</span>
                     ${area.name}
+                    <button class="complete-elearning" title="Complete e-learning">📁</button>
                 </div>
                 <div class="training-content">
-                    <button class="complete-elearning">Complete e-learning</button>
+                    <div class="area-age-selector">
+                        <input type="radio" id="age-${area.id}-12weeks" name="age-${area.id}" value="12weeks" ${this.currentAge === '12weeks' ? 'checked' : ''}>
+                        <label for="age-${area.id}-12weeks">12 weeks</label>
+                        
+                        <input type="radio" id="age-${area.id}-juvenile" name="age-${area.id}" value="juvenile" ${this.currentAge === 'juvenile' ? 'checked' : ''}>
+                        <label for="age-${area.id}-juvenile">Juvenile</label>
+                        
+                        <input type="radio" id="age-${area.id}-adolescent" name="age-${area.id}" value="adolescent" ${this.currentAge === 'adolescent' ? 'checked' : ''}>
+                        <label for="age-${area.id}-adolescent">Adolescent</label>
+                        
+                        <input type="radio" id="age-${area.id}-12months" name="age-${area.id}" value="12months" ${this.currentAge === '12months' ? 'checked' : ''}>
+                        <label for="age-${area.id}-12months">12 months</label>
+                    </div>
                     <div class="milestone-text">${milestone}</div>
                     <div class="progress-slider">
                         <label class="slider-label">Progress: <span class="slider-value">${progress?.value || 0}%</span></label>
@@ -391,6 +431,16 @@ class PREPTrackerApp {
     addProgressButtonHandlers(element, area) {
         const slider = element.querySelector('.progress-range');
         const sliderValue = element.querySelector('.slider-value');
+        
+        // Handle age radio button changes
+        const ageRadios = element.querySelectorAll(`input[name="age-${area.id}"]`);
+        ageRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    this.handleAreaAgeChange(element, area, e.target.value);
+                }
+            });
+        });
         
         // Handle slider changes
         slider.addEventListener('input', (e) => {
