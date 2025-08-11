@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.4';
+        this.APP_VERSION = '1.0.7';
         this.currentView = 'profile';
         this.currentAge = '12weeks';
         this.puppyProfile = null;
@@ -286,8 +286,52 @@ class PREPTrackerApp {
             ageBtn.classList.add('active');
         }
         
-        // Re-render progress grid
-        this.renderProgressGrid();
+        // Update all areas without re-rendering (preserves scroll position)
+        this.updateAllAreasForAge(age);
+    }
+
+    async updateAllAreasForAge(selectedAge) {
+        // Update all radio buttons across all areas
+        document.querySelectorAll('input[name="global-age-selector"]').forEach(radio => {
+            radio.checked = radio.value === selectedAge;
+        });
+
+        // Update each training area's content
+        for (const area of this.trainingAreas) {
+            const slider = document.querySelector(`input.progress-range[data-area="${area.id}"]`);
+            if (slider) {
+                const areaElement = slider.closest('.training-area');
+                if (areaElement) {
+                    await this.updateAreaContent(areaElement, area, selectedAge);
+                }
+            }
+        }
+    }
+
+    async updateAreaContent(element, area, selectedAge) {
+        // Update milestone text
+        const milestoneText = element.querySelector('.milestone-text');
+        if (milestoneText) {
+            milestoneText.textContent = area.milestones[selectedAge];
+        }
+        
+        // Load and update progress for this age
+        const progress = await window.storage.getProgress(area.id, selectedAge);
+        const slider = element.querySelector('.progress-range');
+        const sliderValue = element.querySelector('.slider-value');
+        
+        if (slider && sliderValue) {
+            const progressValue = progress?.value || 0;
+            slider.value = progressValue;
+            sliderValue.textContent = `${progressValue}%`;
+            slider.dataset.age = selectedAge;
+        }
+        
+        // Update action buttons data attributes
+        const actionButtons = element.querySelectorAll('.action-btn');
+        actionButtons.forEach(btn => {
+            btn.dataset.age = selectedAge;
+        });
     }
 
     async handleAreaAgeChange(element, area, selectedAge) {
@@ -365,10 +409,10 @@ class PREPTrackerApp {
                     </div>
                     <div class="training-actions">
                         <button class="action-btn log-btn" data-area="${area.id}" data-age="${this.currentAge}">
-                            📝 Progress Log
+                            📝 Log
                         </button>
                         <button class="action-btn training-btn" data-area="${area.id}" data-age="${this.currentAge}">
-                            🎯 Training Activities
+                            🎯 Training
                         </button>
                     </div>
                 </div>

@@ -452,10 +452,11 @@ body {
 }
 
 .area-age-selector input[type="radio"]:checked + label {
-    background: var(--primary-gradient);
-    border-color: var(--primary-blue-dark);
-    color: var(--text-white);
+    background: var(--primary-gradient) !important;
+    border-color: var(--primary-blue-dark) !important;
+    color: var(--text-white) !important;
     box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
 }
 
 .milestone-text {
@@ -1222,23 +1223,24 @@ body {
 .training-actions {
     margin-top: var(--spacing-lg);
     display: flex;
-    gap: var(--spacing-md);
-    justify-content: center;
+    gap: var(--spacing-sm);
+    justify-content: flex-start;
 }
 
 .action-btn {
-    flex: 1;
-    padding: var(--spacing-md);
+    flex: none;
+    padding: var(--spacing-sm) var(--spacing-md);
     border: 2px solid transparent;
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     font-weight: 600;
+    font-size: 0.85rem;
     cursor: pointer;
     transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-sm);
-    min-height: 50px;
+    gap: var(--spacing-xs);
+    min-height: auto;
 }
 
 .log-btn {
