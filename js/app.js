@@ -1,9 +1,11 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.10';
-        this.currentView = 'profile';
+        this.APP_VERSION = '1.0.11';
+        this.currentView = 'puppies';
         this.currentAge = '12weeks';
+        this.currentPuppyId = null;
         this.puppyProfile = null;
+        this.allProfiles = [];
         this.clickTimeout = null;
         this.updateAvailable = false;
         this.newWorker = null;
@@ -154,8 +156,8 @@ class PREPTrackerApp {
             // Initialize storage
             await window.storage.init();
             
-            // Load puppy profile
-            this.puppyProfile = await window.storage.getProfile();
+            // Load all puppy profiles
+            await this.loadAllProfiles();
             
             // Setup event listeners
             this.setupEventListeners();
@@ -167,12 +169,7 @@ class PREPTrackerApp {
             this.hideLoadingScreen();
             
             // Show appropriate initial view
-            if (this.puppyProfile) {
-                this.showView('progress');
-                this.updatePuppyInfo();
-            } else {
-                this.showView('profile');
-            }
+            this.showView('puppies');
             
         } catch (error) {
             console.error('App initialization failed:', error);
@@ -267,11 +264,127 @@ class PREPTrackerApp {
         this.currentView = viewName;
 
         // Refresh data for specific views
-        if (viewName === 'progress') {
-            this.renderProgressGrid();
+        if (viewName === 'puppies') {
+            this.renderPuppyManagement();
+        } else if (viewName === 'progress') {
+            if (this.currentPuppyId) {
+                this.renderProgressGrid();
+            } else {
+                this.showToast('Please select a puppy first', 'warning');
+                this.showView('puppies');
+            }
         } else if (viewName === 'supporting') {
             this.renderSupportingDocuments();
         }
+    }
+
+    async loadAllProfiles() {
+        try {
+            this.allProfiles = await window.storage.getAllProfiles();
+            
+            // Get current puppy from localStorage or use first available
+            const savedPuppyId = localStorage.getItem('currentPuppyId');
+            if (savedPuppyId && this.allProfiles.find(p => p.id === savedPuppyId)) {
+                await this.selectPuppy(savedPuppyId);
+            } else if (this.allProfiles.length > 0) {
+                await this.selectPuppy(this.allProfiles[0].id);
+            }
+        } catch (error) {
+            console.error('Failed to load profiles:', error);
+            this.allProfiles = [];
+        }
+    }
+
+    async selectPuppy(puppyId) {
+        try {
+            this.currentPuppyId = puppyId;
+            this.puppyProfile = await window.storage.getProfile(puppyId);
+            
+            // Save selection to localStorage
+            localStorage.setItem('currentPuppyId', puppyId);
+            
+            // Update UI
+            this.updatePuppyInfo();
+            this.renderPuppyManagement();
+            
+            console.log('Selected puppy:', this.puppyProfile);
+        } catch (error) {
+            console.error('Failed to select puppy:', error);
+            this.showToast('Failed to select puppy: ' + error.message, 'error');
+        }
+    }
+
+    renderPuppyManagement() {
+        this.updateCurrentPuppyDisplay();
+        this.updatePuppyList();
+    }
+
+    updateCurrentPuppyDisplay() {
+        const currentPuppyDisplay = document.getElementById('currentPuppyDisplay');
+        const addPuppyBtn = document.getElementById('addPuppyBtn');
+        
+        if (this.puppyProfile) {
+            const age = window.storage.calculateAge(this.puppyProfile.dateOfBirth);
+            currentPuppyDisplay.innerHTML = `
+                <div class="current-puppy-card">
+                    <div class="current-puppy-info">
+                        <h4>${this.puppyProfile.puppyName}</h4>
+                        <p><strong>Age:</strong> ${age.text}</p>
+                        <p><strong>Breed:</strong> ${this.puppyProfile.breed || 'Not specified'}</p>
+                        <p><strong>Computer Number:</strong> ${this.puppyProfile.computerNumber || 'Not specified'}</p>
+                    </div>
+                </div>
+                <div class="current-puppy-actions">
+                    <button class="secondary-btn" onclick="app.editCurrentPuppy()">Edit Profile</button>
+                    <button class="primary-btn" onclick="app.showView('progress')">View Progress</button>
+                </div>
+            `;
+            addPuppyBtn.style.display = 'block';
+        } else {
+            currentPuppyDisplay.innerHTML = `
+                <p>No puppy selected</p>
+                <button id="addFirstPuppyBtn" class="primary-btn" onclick="app.showView('profile')">Add Your First Puppy</button>
+            `;
+            addPuppyBtn.style.display = 'none';
+        }
+    }
+
+    updatePuppyList() {
+        const puppyList = document.getElementById('puppyList');
+        
+        if (this.allProfiles.length === 0) {
+            puppyList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); grid-column: 1/-1;">No puppies added yet</p>';
+            return;
+        }
+        
+        puppyList.innerHTML = '';
+        this.allProfiles.forEach(profile => {
+            const age = window.storage.calculateAge(profile.dateOfBirth);
+            const isSelected = profile.id === this.currentPuppyId;
+            
+            const puppyCard = document.createElement('div');
+            puppyCard.className = `puppy-card ${isSelected ? 'selected' : ''}`;
+            puppyCard.innerHTML = `
+                <div class="puppy-card-header">
+                    <div class="puppy-card-info">
+                        <h4>${profile.puppyName}</h4>
+                        <p><strong>Age:</strong> ${age.text}</p>
+                        <p><strong>Breed:</strong> ${profile.breed || 'Not specified'}</p>
+                        <p><strong>Computer Number:</strong> ${profile.computerNumber || 'Not specified'}</p>
+                    </div>
+                    <span class="puppy-status ${isSelected ? 'current' : 'inactive'}">
+                        ${isSelected ? 'Current' : 'Inactive'}
+                    </span>
+                </div>
+                <div class="puppy-card-actions">
+                    <button class="secondary-btn" onclick="app.editPuppy('${profile.id}')">Edit</button>
+                    <button class="secondary-btn" onclick="app.deletePuppy('${profile.id}')">Delete</button>
+                    ${!isSelected ? `<button class="primary-btn" onclick="app.selectPuppy('${profile.id}')">Select</button>` : ''}
+                </div>
+            `;
+            
+            puppyList.appendChild(puppyCard);
+        });
     }
 
     selectAge(age) {

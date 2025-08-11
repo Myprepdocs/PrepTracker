@@ -49,7 +49,11 @@
         <!-- Navigation Menu -->
         <nav id="navMenu" class="nav-menu">
             <div class="nav-content">
-                <button class="nav-item active" data-view="progress">
+                <button class="nav-item active" data-view="puppies">
+                    <span class="nav-icon">🐕‍🦺</span>
+                    My Puppies
+                </button>
+                <button class="nav-item" data-view="progress">
                     <span class="nav-icon">📊</span>
                     Progress Chart
                 </button>
@@ -70,9 +74,39 @@
 
         <!-- Main Content -->
         <main class="main-content">
+
+            <!-- Puppy Management View -->
+            <div id="puppiesView" class="view">
+                <div class="view-header">
+                    <h2>My Puppies</h2>
+                    <p>Manage and switch between your puppy profiles</p>
+                </div>
+                
+                <div id="puppySelector" class="puppy-selector">
+                    <div class="current-puppy-header">
+                        <h3>Current Puppy</h3>
+                        <div id="currentPuppyDisplay" class="current-puppy-display">
+                            <p>No puppy selected</p>
+                            <button id="addFirstPuppyBtn" class="primary-btn">Add Your First Puppy</button>
+                        </div>
+                    </div>
+                    
+                    <div class="puppy-management">
+                        <div class="section-header">
+                            <h3>All Puppies</h3>
+                            <button id="addPuppyBtn" class="primary-btn" style="display: none;">
+                                ➕ Add New Puppy
+                            </button>
+                        </div>
+                        <div id="puppyList" class="puppy-list">
+                            <!-- Puppy cards will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <!-- Puppy Profile Setup View -->
-            <div id="profileView" class="view">
+            <div id="profileView" class="view" style="display: none;">
                 <div class="view-header">
                     <h2>Puppy Profile</h2>
                     <p>Set up your puppy's information</p>

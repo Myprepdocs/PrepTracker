@@ -95,10 +95,11 @@ class StorageService {
         return Promise.resolve(true);
     }
 
-    async saveProfile(profileData) {
+    async saveProfile(profileData, profileId = null) {
         const profile = {
-            id: 'main',
+            id: profileId || this.generateProfileId(),
             ...profileData,
+            createdAt: profileData.createdAt || new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
 
@@ -109,18 +110,45 @@ class StorageService {
         }
     }
 
-    async getProfile() {
+    async getProfile(profileId) {
+        if (!profileId) return null;
+        
         if (this.isIndexedDBAvailable && this.db) {
-            return this.getFromIndexedDB(this.stores.profile, 'main');
+            return this.getFromIndexedDB(this.stores.profile, profileId);
         } else {
-            return this.getFromLocalStorage(this.stores.profile, 'main');
+            return this.getFromLocalStorage(this.stores.profile, profileId);
         }
     }
 
-    async saveProgress(trainingArea, ageRange, progressData) {
-        const progressId = `${trainingArea}_${ageRange}`;
+    async getAllProfiles() {
+        if (this.isIndexedDBAvailable && this.db) {
+            return this.getAllFromIndexedDB(this.stores.profile);
+        } else {
+            return this.getAllFromLocalStorage(this.stores.profile);
+        }
+    }
+
+    async deleteProfile(profileId) {
+        if (!profileId) return false;
+
+        if (this.isIndexedDBAvailable && this.db) {
+            return this.deleteFromIndexedDB(this.stores.profile, profileId);
+        } else {
+            return this.deleteFromLocalStorage(this.stores.profile, profileId);
+        }
+    }
+
+    generateProfileId() {
+        return 'puppy_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    async saveProgress(trainingArea, ageRange, progressData, profileId) {
+        if (!profileId) return null;
+        
+        const progressId = `${profileId}_${trainingArea}_${ageRange}`;
         const progress = {
             id: progressId,
+            profileId,
             trainingArea,
             ageRange,
             ...(typeof progressData === 'object' ? progressData : { status: progressData }),
@@ -134,8 +162,10 @@ class StorageService {
         }
     }
 
-    async getProgress(trainingArea, ageRange) {
-        const progressId = `${trainingArea}_${ageRange}`;
+    async getProgress(trainingArea, ageRange, profileId) {
+        if (!profileId) return null;
+        
+        const progressId = `${profileId}_${trainingArea}_${ageRange}`;
         
         if (this.isIndexedDBAvailable && this.db) {
             return this.getFromIndexedDB(this.stores.progress, progressId);
@@ -152,9 +182,12 @@ class StorageService {
         }
     }
 
-    async saveActivity(activityData) {
+    async saveActivity(activityData, profileId) {
+        if (!profileId) return null;
+        
         const activity = {
             id: Date.now().toString(),
+            profileId,
             ...activityData,
             createdAt: new Date().toISOString()
         };
@@ -166,11 +199,13 @@ class StorageService {
         }
     }
 
-    async getActivities(trainingArea, ageRange) {
+    async getActivities(trainingArea, ageRange, profileId) {
+        if (!profileId) return [];
+        
         if (this.isIndexedDBAvailable && this.db) {
-            return this.getActivitiesFromIndexedDB(trainingArea, ageRange);
+            return this.getActivitiesFromIndexedDB(trainingArea, ageRange, profileId);
         } else {
-            return this.getActivitiesFromLocalStorage(trainingArea, ageRange);
+            return this.getActivitiesFromLocalStorage(trainingArea, ageRange, profileId);
         }
     }
     
@@ -239,7 +274,7 @@ class StorageService {
         });
     }
 
-    async getActivitiesFromIndexedDB(trainingArea, ageRange) {
+    async getActivitiesFromIndexedDB(trainingArea, ageRange, profileId) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction([this.stores.activities], 'readonly');
             const store = transaction.objectStore(this.stores.activities);
@@ -248,6 +283,7 @@ class StorageService {
             request.onsuccess = () => {
                 const activities = request.result || [];
                 const filtered = activities.filter(activity => 
+                    activity.profileId === profileId &&
                     activity.trainingArea === trainingArea && 
                     activity.ageRange === ageRange
                 );
@@ -298,11 +334,12 @@ class StorageService {
         }
     }
 
-    getActivitiesFromLocalStorage(trainingArea, ageRange) {
+    getActivitiesFromLocalStorage(trainingArea, ageRange, profileId) {
         try {
             const key = `PREPTracker_${this.stores.activities}`;
             const activities = JSON.parse(localStorage.getItem(key) || '[]');
             const filtered = activities.filter(activity => 
+                activity.profileId === profileId &&
                 activity.trainingArea === trainingArea && 
                 activity.ageRange === ageRange
             );
@@ -376,6 +413,29 @@ class StorageService {
             request.onsuccess = () => resolve(true);
             request.onerror = () => reject(new Error(`Failed to clear ${storeName}`));
         });
+    }
+
+    async deleteFromIndexedDB(storeName, id) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.delete(id);
+
+            request.onsuccess = () => resolve(true);
+            request.onerror = () => reject(new Error(`Failed to delete from ${storeName}`));
+        });
+    }
+
+    deleteFromLocalStorage(storeName, id) {
+        try {
+            const key = `PREPTracker_${storeName}`;
+            const data = JSON.parse(localStorage.getItem(key) || '[]');
+            const filteredData = data.filter(item => item.id !== id);
+            localStorage.setItem(key, JSON.stringify(filteredData));
+            return Promise.resolve(true);
+        } catch (error) {
+            return Promise.reject(new Error(`LocalStorage delete failed: ${error.message}`));
+        }
     }
 
     async clearAllData() {
