@@ -375,6 +375,7 @@ body {
 /* Progress Grid */
 .progress-grid {
     display: grid;
+    grid-template-columns: 1fr;
     gap: var(--spacing-lg);
 }
 
@@ -399,6 +400,7 @@ body {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+    cursor: pointer;
 }
 
 .training-header.toileting { background: linear-gradient(135deg, var(--toileting-color) 0%, #22D3EE 100%); }
@@ -1500,6 +1502,30 @@ body {
     
     .toast {
         min-width: auto;
+    }
+}
+
+@media (min-width: 600px) {
+    .progress-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 900px) {
+    .progress-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 1200px) {
+    .progress-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 1500px) {
+    .progress-grid {
+        grid-template-columns: repeat(5, 1fr);
     }
 }
 

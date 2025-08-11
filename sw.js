@@ -1,4 +1,4 @@
-const APP_VERSION = '1.0.19';
+const APP_VERSION = '1.0.20';
 const CACHE_NAME = `prep-tracker-v${APP_VERSION}`;
 const DB_NAME = 'PREPTracker';
 const VERSION_STORAGE_KEY = 'prep_tracker_version';
