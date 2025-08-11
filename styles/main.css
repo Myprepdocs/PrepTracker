@@ -490,10 +490,11 @@ body {
     background: var(--bg-tertiary);
     outline: none;
     margin: var(--spacing-sm) 0;
-    cursor: pointer;
+    cursor: default;
     transition: all var(--transition-fast);
     -webkit-appearance: none;
     appearance: none;
+    pointer-events: none;
 }
 
 .progress-range::-webkit-slider-track {
@@ -501,6 +502,7 @@ body {
     height: 6px;
     border-radius: var(--radius-md);
     background: var(--bg-tertiary);
+    pointer-events: none;
 }
 
 .progress-range::-webkit-slider-thumb {
@@ -510,10 +512,15 @@ body {
     height: 20px;
     border-radius: 50%;
     background: var(--primary-gradient);
-    cursor: pointer;
+    cursor: grab;
     box-shadow: var(--shadow-md);
     border: 2px solid var(--bg-primary);
     transition: all var(--transition-fast);
+    pointer-events: auto;
+}
+
+.progress-range::-webkit-slider-thumb:active {
+    cursor: grabbing;
 }
 
 .progress-range::-webkit-slider-thumb:hover {
@@ -531,6 +538,7 @@ body {
     border-radius: var(--radius-md);
     background: var(--bg-tertiary);
     border: none;
+    pointer-events: none;
 }
 
 .progress-range::-moz-range-thumb {
@@ -538,10 +546,15 @@ body {
     height: 20px;
     border-radius: 50%;
     background: var(--primary-gradient);
-    cursor: pointer;
+    cursor: grab;
     box-shadow: var(--shadow-md);
     border: 2px solid var(--bg-primary);
     transition: all var(--transition-fast);
+    pointer-events: auto;
+}
+
+.progress-range::-moz-range-thumb:active {
+    cursor: grabbing;
 }
 
 .progress-range::-moz-range-thumb:hover {

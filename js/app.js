@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.2';
+        this.APP_VERSION = '1.0.4';
         this.currentView = 'profile';
         this.currentAge = '12weeks';
         this.puppyProfile = null;
@@ -332,16 +332,16 @@ class PREPTrackerApp {
                 </div>
                 <div class="training-content">
                     <div class="area-age-selector">
-                        <input type="radio" id="age-${area.id}-12weeks" name="age-${area.id}" value="12weeks" ${this.currentAge === '12weeks' ? 'checked' : ''}>
+                        <input type="radio" id="age-${area.id}-12weeks" name="global-age-selector" value="12weeks" ${this.currentAge === '12weeks' ? 'checked' : ''}>
                         <label for="age-${area.id}-12weeks">12 weeks</label>
                         
-                        <input type="radio" id="age-${area.id}-juvenile" name="age-${area.id}" value="juvenile" ${this.currentAge === 'juvenile' ? 'checked' : ''}>
-                        <label for="age-${area.id}-juvenile">Juvenile</label>
+                        <input type="radio" id="age-${area.id}-juvenile" name="global-age-selector" value="juvenile" ${this.currentAge === 'juvenile' ? 'checked' : ''}>
+                        <label for="age-${area.id}-juvenile">6 months</label>
                         
-                        <input type="radio" id="age-${area.id}-adolescent" name="age-${area.id}" value="adolescent" ${this.currentAge === 'adolescent' ? 'checked' : ''}>
-                        <label for="age-${area.id}-adolescent">Adolescent</label>
+                        <input type="radio" id="age-${area.id}-adolescent" name="global-age-selector" value="adolescent" ${this.currentAge === 'adolescent' ? 'checked' : ''}>
+                        <label for="age-${area.id}-adolescent">9 months</label>
                         
-                        <input type="radio" id="age-${area.id}-12months" name="age-${area.id}" value="12months" ${this.currentAge === '12months' ? 'checked' : ''}>
+                        <input type="radio" id="age-${area.id}-12months" name="global-age-selector" value="12months" ${this.currentAge === '12months' ? 'checked' : ''}>
                         <label for="age-${area.id}-12months">12 months</label>
                     </div>
                     <div class="milestone-text">${milestone}</div>
@@ -432,12 +432,12 @@ class PREPTrackerApp {
         const slider = element.querySelector('.progress-range');
         const sliderValue = element.querySelector('.slider-value');
         
-        // Handle age radio button changes
-        const ageRadios = element.querySelectorAll(`input[name="age-${area.id}"]`);
+        // Handle age radio button changes (global across all areas)
+        const ageRadios = element.querySelectorAll('input[name="global-age-selector"]');
         ageRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
                 if (e.target.checked) {
-                    this.handleAreaAgeChange(element, area, e.target.value);
+                    this.selectAge(e.target.value);
                 }
             });
         });
