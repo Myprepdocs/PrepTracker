@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.15';
+        this.APP_VERSION = '1.0.16';
         this.currentView = 'puppies';
         this.currentAge = '12weeks';
         this.currentPuppyId = null;
@@ -559,16 +559,16 @@ class PREPTrackerApp {
                 <div class="training-content">
                     <div class="area-age-selector">
                         <input type="radio" id="age-${area.id}-12weeks" name="age-${area.id}" value="12weeks" ${this.currentAge === '12weeks' ? 'checked' : ''}>
-                        <label for="age-${area.id}-12weeks">12 wks</label>
+                        <label for="age-${area.id}-12weeks">3</label>
                         
                         <input type="radio" id="age-${area.id}-juvenile" name="age-${area.id}" value="juvenile" ${this.currentAge === 'juvenile' ? 'checked' : ''}>
-                        <label for="age-${area.id}-juvenile">6 mnths</label>
+                        <label for="age-${area.id}-juvenile">6</label>
                         
                         <input type="radio" id="age-${area.id}-adolescent" name="age-${area.id}" value="adolescent" ${this.currentAge === 'adolescent' ? 'checked' : ''}>
-                        <label for="age-${area.id}-adolescent">9 mnths</label>
+                        <label for="age-${area.id}-adolescent">9</label>
                         
                         <input type="radio" id="age-${area.id}-12months" name="age-${area.id}" value="12months" ${this.currentAge === '12months' ? 'checked' : ''}>
-                        <label for="age-${area.id}-12months">12 mnths</label>
+                        <label for="age-${area.id}-12months">12</label>
                     </div>
                     <div class="milestone-text">${milestone}</div>
                     <div class="progress-slider">
