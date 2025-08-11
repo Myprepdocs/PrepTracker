@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.16';
+        this.APP_VERSION = '1.0.18';
         this.currentView = 'puppies';
         this.currentAge = '12weeks';
         this.currentPuppyId = null;
@@ -393,6 +393,8 @@ class PREPTrackerApp {
 
     // Puppy Management Methods
     addNewPuppy() {
+        this.currentPuppyId = null;
+        this.puppyProfile = null;
         this.showView('profile');
         this.clearProfileForm();
     }
