@@ -755,12 +755,24 @@ body {
     background: var(--bg-primary);
     border-radius: var(--radius-xl);
     margin: 10% auto;
-    max-width: 500px;
+    max-width: 90%;
     width: 90%;
     max-height: 80vh;
     overflow-y: auto;
     box-shadow: var(--shadow-xl);
     animation: slideIn 0.3s ease-out;
+}
+
+@media (min-width: 768px) {
+    .modal-content {
+        max-width: 80%;
+    }
+}
+
+@media (min-width: 1024px) {
+    .modal-content {
+        max-width: 70%;
+    }
 }
 
 .modal-header {
@@ -984,10 +996,12 @@ body {
 
 .progress-log-form {
     background: var(--bg-primary);
-    border-radius: var(--radius-lg);
+    border-radius: 0;
     padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
-    border: 2px solid var(--border-light);
+    margin: 0 calc(-1 * var(--spacing-lg)) var(--spacing-lg) calc(-1 * var(--spacing-lg));
+    border: none;
+    border-top: 2px solid var(--border-light);
+    border-bottom: 2px solid var(--border-light);
     animation: slideDown var(--transition-normal) ease-out;
 }
 

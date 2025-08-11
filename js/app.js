@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.21';
+        this.APP_VERSION = '1.0.24';
         this.currentView = 'puppies';
         this.currentAge = '12weeks';
         this.currentPuppyId = null;
@@ -632,13 +632,6 @@ class PREPTrackerApp {
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="logStatus-${area.id}">Progress Status</label>
-                                        <select id="logStatus-${area.id}" class="log-status">
-                                            <option value="working">Working on it</option>
-                                            <option value="proficient">Proficient</option>
-                                        </select>
-                                    </div>
                                     <div class="form-actions">
                                         <button type="button" class="secondary-btn cancel-log-btn">Cancel</button>
                                         <button type="button" class="primary-btn save-log-btn">Save</button>
@@ -768,7 +761,6 @@ class PREPTrackerApp {
                                         <span class="video-size">(${Math.round(activity.video.size / 1024 / 1024 * 100) / 100} MB)</span>
                                     </div>
                                 ` : ''}
-                                <div class="activity-status status-${activity.status}">${activity.status === 'working' ? 'Working on it' : 'Proficient'}</div>
                             </div>
                         `).join('')}
                     </div>
@@ -843,7 +835,6 @@ class PREPTrackerApp {
         const addBtn = element.querySelector('.add-entry-btn');
         const dateInput = element.querySelector('.log-date');
         const notesInput = element.querySelector('.log-notes');
-        const statusSelect = element.querySelector('.log-status');
 
         // Show form and hide add button
         form.style.display = 'block';
@@ -852,7 +843,6 @@ class PREPTrackerApp {
         // Set default values
         dateInput.value = new Date().toISOString().split('T')[0];
         notesInput.value = '';
-        statusSelect.value = 'working';
 
         // Focus on notes input
         setTimeout(() => notesInput.focus(), 100);
@@ -878,12 +868,10 @@ class PREPTrackerApp {
     async saveProgressEntry(element, area) {
         const dateInput = element.querySelector('.log-date');
         const notesInput = element.querySelector('.log-notes');
-        const statusSelect = element.querySelector('.log-status');
         const videoInput = element.querySelector('.log-video');
 
         const date = dateInput.value;
         const notes = notesInput.value.trim();
-        const status = statusSelect.value;
 
         if (!date || !notes) {
             this.showToast('Please fill in date and notes', 'error');
@@ -895,8 +883,7 @@ class PREPTrackerApp {
                 trainingArea: area.id,
                 ageRange: this.currentAge,
                 date,
-                notes,
-                status
+                notes
             };
 
             // Handle video upload if present
@@ -912,7 +899,6 @@ class PREPTrackerApp {
             }
 
             await window.storage.saveActivity(activityData, this.currentPuppyId);
-            await window.storage.saveProgress(area.id, this.currentAge, { value: status }, this.currentPuppyId);
 
             // Refresh the accordion entries
             const accordion = element.querySelector('.progress-accordion');
@@ -921,16 +907,6 @@ class PREPTrackerApp {
             // Hide form and show success message
             this.hideProgressForm(element);
             this.showToast('Progress entry saved successfully', 'success');
-
-            // Update the progress slider value in this specific element
-            const progressSlider = element.querySelector('.progress-range');
-            const sliderValue = element.querySelector('.slider-value');
-            if (progressSlider && sliderValue && typeof status === 'string') {
-                // Convert status to percentage for display
-                const progressValue = status === 'proficient' ? 100 : 50;
-                progressSlider.value = progressValue;
-                sliderValue.textContent = `${progressValue}%`;
-            }
 
         } catch (error) {
             console.error('Failed to save progress entry:', error);
@@ -1000,7 +976,6 @@ class PREPTrackerApp {
                                         <span class="video-size">(${Math.round(activity.video.size / 1024 / 1024 * 100) / 100} MB)</span>
                                     </div>
                                 ` : ''}
-                                <div class="activity-status status-${activity.status}">${activity.status === 'working' ? 'Working on it' : 'Proficient'}</div>
                             </div>
                         `).join('')}
                     </div>
@@ -1069,29 +1044,7 @@ class PREPTrackerApp {
                 </div>
                 <div class="form-group">
                     <label for="activityNotes">Notes</label>
-                    <textarea id="activityNotes" rows="4" placeholder="Add training notes, observations, or progress details..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="activityVideo">Video (Optional)</label>
-                    <div class="video-upload-section">
-                        <input type="file" id="activityVideo" accept="video/*" style="display: none;">
-                        <button type="button" id="videoUploadBtn" class="secondary-btn">
-                            📹 Choose Video
-                        </button>
-                        <div id="videoPreview" class="video-preview" style="display: none;">
-                            <div class="video-info">
-                                <span id="videoFileName"></span>
-                                <button type="button" id="removeVideo" class="remove-video-btn">&times;</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="activityStatus">Progress Status</label>
-                    <select id="activityStatus">
-                        <option value="working">Working on it</option>
-                        <option value="proficient">Proficient</option>
-                    </select>
+                    <div id="activityNotesEditor"></div>
                 </div>
             </div>
         `;
@@ -1103,37 +1056,20 @@ class PREPTrackerApp {
         `;
         
         const dateInput = document.getElementById('activityDate');
-        const notesInput = document.getElementById('activityNotes');
-        const statusSelect = document.getElementById('activityStatus');
-        const videoInput = document.getElementById('activityVideo');
-        const videoUploadBtn = document.getElementById('videoUploadBtn');
-        const videoPreview = document.getElementById('videoPreview');
-        const videoFileName = document.getElementById('videoFileName');
-        const removeVideoBtn = document.getElementById('removeVideo');
-        
-        dateInput.value = new Date().toISOString().split('T')[0];
-        notesInput.value = '';
-        statusSelect.value = 'working';
-        
-        // Video upload handlers
-        videoUploadBtn.addEventListener('click', () => {
-            videoInput.click();
-        });
-        
-        videoInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                videoFileName.textContent = file.name;
-                videoPreview.style.display = 'block';
-                videoUploadBtn.textContent = '📹 Change Video';
+        const notesEditor = document.getElementById('activityNotesEditor');
+
+        this.quill = new Quill(notesEditor, {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, false] }],
+                    ['bold', 'italic', 'underline'],
+                    ['image', 'code-block']
+                ]
             }
         });
         
-        removeVideoBtn.addEventListener('click', () => {
-            videoInput.value = '';
-            videoPreview.style.display = 'none';
-            videoUploadBtn.textContent = '📹 Choose Video';
-        });
+        dateInput.value = new Date().toISOString().split('T')[0];
         
         // Add event listeners for the footer buttons
         document.getElementById('cancelActivity').addEventListener('click', this.closeModal.bind(this));
@@ -1147,11 +1083,14 @@ class PREPTrackerApp {
         // Show footer buttons for activity entry
         modalFooter.style.display = 'flex';
         modal.style.display = 'flex';
-        notesInput.focus();
+        this.quill.focus();
     }
 
     closeModal() {
         document.getElementById('activityModal').style.display = 'none';
+        if (this.quill) {
+            this.quill = null;
+        }
     }
 
     async saveActivity() {
@@ -1160,9 +1099,7 @@ class PREPTrackerApp {
         const age = modal.dataset.age;
         const context = modal.dataset.context;
         const date = document.getElementById('activityDate').value;
-        const notes = document.getElementById('activityNotes').value;
-        const status = document.getElementById('activityStatus').value;
-        const videoInput = document.getElementById('activityVideo');
+        const notes = this.quill.root.innerHTML;
         
         if (!date || !notes.trim()) {
             this.showToast('Please fill in date and notes', 'error');
@@ -1175,32 +1112,10 @@ class PREPTrackerApp {
                 ageRange: age,
                 date,
                 notes: notes.trim(),
-                status
+                status: 'working' // Since we removed the status dropdown
             };
             
-            // Handle video upload if present
-            if (videoInput && videoInput.files && videoInput.files[0]) {
-                const videoFile = videoInput.files[0];
-                
-                // Store video metadata (in a real app, you'd upload to a server)
-                activityData.video = {
-                    name: videoFile.name,
-                    size: videoFile.size,
-                    type: videoFile.type,
-                    lastModified: videoFile.lastModified
-                };
-                
-                // For demo purposes, we'll just store the file reference
-                // In production, you would upload to a server and store the URL
-                this.showToast('Video noted (in production, this would upload to server)', 'info');
-            }
-            
-            console.log('About to save activity data:', activityData);
             await window.storage.saveActivity(activityData);
-            console.log('Activity saved successfully');
-            
-            // Update progress status
-            await window.storage.saveProgress(area, age, status);
             
             // Refresh the progress grid
             await this.renderProgressGrid();
@@ -1211,12 +1126,9 @@ class PREPTrackerApp {
             // If we came from progress log modal, return to it with updated data
             if (context === 'progress-log') {
                 setTimeout(async () => {
-                    console.log('Returning to progress log for area:', area, 'age:', age);
                     const areaObj = this.trainingAreas.find(a => a.id === area);
-                    console.log('Found area object:', areaObj);
                     if (areaObj) {
                         const activities = await window.storage.getActivities(area, age);
-                        console.log('Retrieved activities:', activities);
                         this.showProgressLogModal(areaObj, age, activities);
                     }
                 }, 100);

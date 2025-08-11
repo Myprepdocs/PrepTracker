@@ -16,6 +16,9 @@
     
     <!-- Styles -->
     <link rel="stylesheet" href="styles/main.css">
+
+    <!-- Quill WYSIWYG Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -368,14 +371,7 @@
                         </div>
                         <div class="form-group">
                             <label for="activityNotes">Notes</label>
-                            <textarea id="activityNotes" rows="4" placeholder="Add training notes, observations, or progress details..."></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="activityStatus">Progress Status</label>
-                            <select id="activityStatus">
-                                <option value="working">Working on it</option>
-                                <option value="proficient">Proficient</option>
-                            </select>
+                            <div id="activityNotesEditor"></div>
                         </div>
                     </div>
                 </div>
@@ -394,6 +390,7 @@
     <!-- Scripts -->
     <script src="js/storage.js"></script>
     <script src="js/app.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
     <!-- PWA Registration -->
     <script>
