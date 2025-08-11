@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.11';
+        this.APP_VERSION = '1.0.13';
         this.currentView = 'puppies';
         this.currentAge = '12weeks';
         this.currentPuppyId = null;
@@ -201,6 +201,11 @@ class PREPTrackerApp {
 
         // Profile form
         document.getElementById('profileForm').addEventListener('submit', this.handleProfileSave.bind(this));
+        
+        // Puppy management buttons
+        document.getElementById('addPuppyBtn').addEventListener('click', () => {
+            this.addNewPuppy();
+        });
 
         // Age selector
         document.querySelectorAll('.age-btn').forEach(btn => {
@@ -387,6 +392,70 @@ class PREPTrackerApp {
         });
     }
 
+    // Puppy Management Methods
+    addNewPuppy() {
+        this.showView('profile');
+        this.clearProfileForm();
+    }
+
+    editCurrentPuppy() {
+        if (this.puppyProfile) {
+            this.editPuppy(this.puppyProfile.id);
+        }
+    }
+
+    editPuppy(puppyId) {
+        this.selectPuppy(puppyId);
+        this.showView('profile');
+        this.populateProfileForm();
+    }
+
+    async deletePuppy(puppyId) {
+        if (this.allProfiles.length === 1) {
+            this.showToast('Cannot delete the only puppy. Add another puppy first.', 'warning');
+            return;
+        }
+
+        const puppy = this.allProfiles.find(p => p.id === puppyId);
+        if (!puppy) return;
+
+        const confirmed = confirm(`Are you sure you want to delete ${puppy.puppyName}? This will permanently remove all training data for this puppy.`);
+        if (!confirmed) return;
+
+        try {
+            // Delete the puppy profile
+            await window.storage.deleteProfile(puppyId);
+
+            // Remove from local array
+            this.allProfiles = this.allProfiles.filter(p => p.id !== puppyId);
+
+            // If this was the current puppy, select another one
+            if (this.currentPuppyId === puppyId) {
+                if (this.allProfiles.length > 0) {
+                    await this.selectPuppy(this.allProfiles[0].id);
+                } else {
+                    this.currentPuppyId = null;
+                    this.puppyProfile = null;
+                    localStorage.removeItem('currentPuppyId');
+                }
+            }
+
+            this.renderPuppyManagement();
+            this.showToast(`${puppy.puppyName} has been deleted`, 'success');
+
+        } catch (error) {
+            console.error('Failed to delete puppy:', error);
+            this.showToast('Failed to delete puppy: ' + error.message, 'error');
+        }
+    }
+
+    clearProfileForm() {
+        document.getElementById('puppyNameInput').value = '';
+        document.getElementById('computerNumber').value = '';
+        document.getElementById('dateOfBirth').value = '';
+        document.getElementById('breed').value = '';
+    }
+
     selectAge(age) {
         this.currentAge = age;
         
@@ -430,7 +499,7 @@ class PREPTrackerApp {
         }
         
         // Load and update progress for this age
-        const progress = await window.storage.getProgress(area.id, selectedAge);
+        const progress = await window.storage.getProgress(area.id, selectedAge, this.currentPuppyId);
         const slider = element.querySelector('.progress-range');
         const sliderValue = element.querySelector('.slider-value');
         
@@ -454,7 +523,7 @@ class PREPTrackerApp {
         milestoneText.textContent = area.milestones[selectedAge];
         
         // Load progress for this age
-        const progress = await window.storage.getProgress(area.id, selectedAge);
+        const progress = await window.storage.getProgress(area.id, selectedAge, this.currentPuppyId);
         const slider = element.querySelector('.progress-range');
         const sliderValue = element.querySelector('.slider-value');
         
@@ -477,7 +546,7 @@ class PREPTrackerApp {
         grid.innerHTML = '';
 
         for (const area of this.trainingAreas) {
-            const progress = await window.storage.getProgress(area.id, this.currentAge);
+            const progress = await window.storage.getProgress(area.id, this.currentAge, this.currentPuppyId);
             const milestone = area.milestones[this.currentAge];
 
             const areaElement = document.createElement('div');
@@ -672,7 +741,7 @@ class PREPTrackerApp {
         const addEntryBtn = accordion.querySelector('.add-entry-btn');
         
         try {
-            const activities = await window.storage.getActivities(area.id, this.currentAge);
+            const activities = await window.storage.getActivities(area.id, this.currentAge, this.currentPuppyId);
             
             if (activities && activities.length > 0) {
                 entriesContainer.innerHTML = `
@@ -831,8 +900,8 @@ class PREPTrackerApp {
                 this.showToast('Video noted (in production, this would upload to server)', 'info');
             }
 
-            await window.storage.saveActivity(activityData);
-            await window.storage.saveProgress(area.id, this.currentAge, status);
+            await window.storage.saveActivity(activityData, this.currentPuppyId);
+            await window.storage.saveProgress(area.id, this.currentAge, { value: status }, this.currentPuppyId);
 
             // Refresh the accordion entries
             const accordion = element.querySelector('.progress-accordion');
@@ -862,7 +931,7 @@ class PREPTrackerApp {
         const value = parseInt(e.target.value);
         
         try {
-            await window.storage.saveProgress(area.id, this.currentAge, { value });
+            await window.storage.saveProgress(area.id, this.currentAge, { value }, this.currentPuppyId);
             this.showToast(`${area.name} progress updated to ${value}%`, 'success');
         } catch (error) {
             console.error('Failed to save progress:', error);
@@ -1226,40 +1295,59 @@ class PREPTrackerApp {
     async handleProfileSave(e) {
         e.preventDefault();
         
-        const formData = new FormData(e.target);
-        const profile = {
-            name: document.getElementById('puppyNameInput').value.trim(),
+        const profileData = {
+            puppyName: document.getElementById('puppyNameInput').value.trim(),
             computerNumber: document.getElementById('computerNumber').value.trim(),
             dateOfBirth: document.getElementById('dateOfBirth').value,
             breed: document.getElementById('breed').value
         };
         
-        if (!profile.name || !profile.dateOfBirth) {
+        if (!profileData.puppyName || !profileData.dateOfBirth) {
             this.showToast('Please fill in required fields', 'error');
             return;
         }
         
         try {
-            await window.storage.saveProfile(profile);
-            this.puppyProfile = profile;
-            this.updatePuppyInfo();
-            this.showToast('Profile saved successfully', 'success');
+            // Check if we're editing an existing puppy or creating a new one
+            const isEditing = this.currentPuppyId && this.puppyProfile;
             
-            // Switch to progress view
+            if (isEditing) {
+                // Update existing puppy
+                const updatedProfile = await window.storage.saveProfile(profileData, this.currentPuppyId);
+                this.puppyProfile = updatedProfile;
+                
+                // Update the profile in our local array
+                const index = this.allProfiles.findIndex(p => p.id === this.currentPuppyId);
+                if (index !== -1) {
+                    this.allProfiles[index] = updatedProfile;
+                }
+                
+                this.showToast('Profile updated successfully', 'success');
+            } else {
+                // Create new puppy
+                const newProfile = await window.storage.saveProfile(profileData);
+                
+                // Add to local array and select the new puppy
+                this.allProfiles.push(newProfile);
+                await this.selectPuppy(newProfile.id);
+                
+                this.showToast('New puppy added successfully', 'success');
+            }
+            
             setTimeout(() => {
-                this.showView('progress');
+                this.showView('puppies');
             }, 1000);
             
         } catch (error) {
             console.error('Failed to save profile:', error);
-            this.showToast('Failed to save profile', 'error');
+            this.showToast('Failed to save profile: ' + error.message, 'error');
         }
     }
 
     populateProfileForm() {
         if (!this.puppyProfile) return;
         
-        document.getElementById('puppyNameInput').value = this.puppyProfile.name || '';
+        document.getElementById('puppyNameInput').value = this.puppyProfile.puppyName || '';
         document.getElementById('computerNumber').value = this.puppyProfile.computerNumber || '';
         document.getElementById('dateOfBirth').value = this.puppyProfile.dateOfBirth || '';
         document.getElementById('breed').value = this.puppyProfile.breed || '';
@@ -1271,7 +1359,7 @@ class PREPTrackerApp {
         const puppyAge = document.getElementById('puppyAge');
         
         if (this.puppyProfile) {
-            puppyName.textContent = this.puppyProfile.name;
+            puppyName.textContent = this.puppyProfile.puppyName;
             puppyAge.textContent = window.storage.formatAge(this.puppyProfile.dateOfBirth);
             puppyInfo.style.display = 'block';
             

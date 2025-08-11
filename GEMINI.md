@@ -2,35 +2,44 @@
 
 ## Purpose
 
-The Guide Dog PREP Tracker is a Progressive Web Application (PWA) designed to help puppy raisers track their puppy's progress through the **Puppy Raising and Education Programme (PREP)** for guide dog training. The app provides a structured way to monitor development across key training areas and age milestones, ensuring comprehensive preparation for future guide dog work.
+The Guide Dog PREP Tracker is a Progressive Web Application (PWA) designed to help puppy raisers track progress for **multiple puppies** through the **Puppy Raising and Education Programme (PREP)** for guide dog training. The app provides a structured way to monitor development across key training areas and age milestones for unlimited puppy profiles, ensuring comprehensive preparation for future guide dog work.
 
 ## Core Functionality
 
 The application serves as a digital companion for puppy raisers, allowing them to:
 
-- **Track Progress**: Monitor development across 10 essential training areas
+- **Multi-Puppy Management**: Add, edit, delete, and switch between unlimited puppy profiles
+- **Track Progress**: Monitor development across 10 essential training areas per puppy
 - **Age-Based Milestones**: View specific goals and expectations for different developmental stages
-- **Activity Logging**: Record training sessions, observations, and video evidence
+- **Activity Logging**: Record training sessions, observations, and video evidence for each puppy
 - **Document Management**: Access supporting materials and guidance documents
-- **Data Management**: Backup, restore, and manage training data
+- **Data Management**: Backup, restore, and manage training data across all puppies
+- **Profile Switching**: Seamlessly switch between puppies while maintaining context
 
 ## Target Users
 
-- Guide dog puppy raisers
-- Puppy training coordinators
-- Guide dog organizations
+- Guide dog puppy raisers managing multiple puppies
+- Puppy training coordinators overseeing multiple litters
+- Guide dog organizations with breeding programs
 - Volunteers participating in puppy raising programs
+- Foster families raising successive puppies
 
 ## Application Structure
 
-### 1. **Puppy Profile System**
-- **Purpose**: Establish individual puppy identity and calculate age-appropriate milestones
+### 1. **Multi-Puppy Profile System**
+- **Purpose**: Manage unlimited puppy profiles with complete data isolation
+- **Key Features**:
+  - **Profile Management**: Create, edit, delete puppy profiles
+  - **Quick Switching**: Select active puppy from dashboard
+  - **Data Isolation**: Each puppy's progress is completely separate
+  - **Persistent Selection**: Remembers last selected puppy
 - **Data Collected**:
   - Puppy name
   - Computer/ID number
   - Date of birth (for automatic age calculation)
   - Breed information
-- **Age Calculation**: Automatically determines current developmental stage based on birth date
+  - Individual training progress and history
+- **Age Calculation**: Automatically determines current developmental stage based on birth date for each puppy
 
 ### 2. **Progress Tracking System**
 
@@ -52,11 +61,12 @@ The application serves as a digital companion for puppy raisers, allowing them t
 - **Adolescent**: Developing reliability and managing teenage behaviors
 - **12 Months**: Pre-advanced training readiness
 
-#### **Progress Indicators**
+#### **Progress Indicators** (Per Puppy)
 - **Individual Age Selection**: Each training area has radio buttons to select the relevant age stage
-- **Progress Sliders**: Visual percentage tracking (0-100%) for each area/age combination
+- **Progress Sliders**: Visual percentage tracking (0-100%) for each area/age combination per puppy
 - **Milestone Text**: Age-specific behavioral expectations and goals
-- **Activity Logging**: Detailed training session records with dates, notes, and video attachments
+- **Activity Logging**: Detailed training session records with dates, notes, and video attachments for each puppy
+- **Data Separation**: All progress data is isolated per puppy profile
 
 ### 3. **Supporting Documents System**
 Educational resources covering specialized topics:
@@ -67,11 +77,23 @@ Educational resources covering specialized topics:
 - **Adolescence** 🌱 - Managing teenage dog behaviors
 - **Stairs and Steps** 🪜 - Safe navigation training
 
-### 4. **Data Management Tools**
-- **Export/Backup**: JSON-based data export for backup purposes
-- **Import/Restore**: Ability to restore previous backups
+### 4. **Puppy Management Dashboard**
+- **Current Puppy Display**: Shows selected puppy's key information and quick actions
+- **Puppy List**: Grid view of all puppy profiles with management controls
+- **Profile Cards**: Individual cards showing puppy details, age, and status
+- **Management Actions**:
+  - **Add New Puppy**: Create additional puppy profiles
+  - **Edit Profile**: Modify existing puppy information
+  - **Delete Puppy**: Remove puppy profiles with confirmation (prevents deletion of last puppy)
+  - **Select Puppy**: Switch active puppy context
+- **Visual Indicators**: Current puppy highlighting and status badges
+
+### 5. **Data Management Tools**
+- **Multi-Puppy Export/Backup**: JSON-based data export including all puppy profiles
+- **Import/Restore**: Ability to restore previous backups with multiple puppies
 - **Reset Function**: Complete data clearing for fresh start
 - **Debug Tools**: Development utilities for troubleshooting
+- **Data Isolation**: Complete separation of data between puppy profiles
 
 ## Technical Architecture
 
@@ -84,7 +106,11 @@ Educational resources covering specialized topics:
 ### **Data Storage**
 - **Primary**: IndexedDB for robust client-side data persistence
 - **Fallback**: localStorage for browsers with limited IndexedDB support
-- **Structure**: Separate object stores for profiles, progress, activities, and documents
+- **Multi-Puppy Architecture**: 
+  - **Profiles**: Each puppy has a unique ID and separate profile record
+  - **Progress Data**: Keyed by `profileId_trainingArea_ageRange` for complete isolation
+  - **Activities**: All training logs include `profileId` for proper filtering
+  - **Data Separation**: Zero cross-contamination between puppy profiles
 
 ### **PWA Features**
 - **Offline Capability**: Full functionality without internet connection
@@ -102,32 +128,36 @@ Educational resources covering specialized topics:
 
 ```
 PrepTracker/
-├── index.html              # Main application shell
+├── index.html              # Main application shell with multi-puppy interface
 ├── manifest.json           # PWA manifest configuration
 ├── sw.js                   # Service worker with version management
 ├── js/
-│   ├── app.js              # Main application controller
-│   └── storage.js          # Data management and IndexedDB interface
+│   ├── app.js              # Main application controller with multi-puppy logic
+│   └── storage.js          # Data management with multi-puppy IndexedDB interface
 ├── styles/
-│   └── main.css            # Complete application styling
+│   └── main.css            # Complete application styling including puppy management
 ├── icons/                  # PWA icons and assets
-├── test-version.html       # Development testing utilities
 └── GEMINI.md              # This documentation file
 ```
 
 ## Key Design Decisions
 
 ### **User Experience**
-- **Age-Specific Interface**: Radio buttons in each training area allow age-specific milestone viewing
-- **Visual Progress Tracking**: Color-coded sliders with 5% increments for precise progress indication
+- **Multi-Puppy Dashboard**: Central hub for managing and switching between puppy profiles
+- **Age-Specific Interface**: Radio buttons in each training area allow age-specific milestone viewing per puppy
+- **Visual Progress Tracking**: Color-coded sliders with 5% increments for precise progress indication per puppy
 - **Contextual Actions**: Each training area provides relevant action buttons (Progress Log, Training Activities)
+- **Profile Context**: Always shows which puppy is currently selected
+- **Seamless Switching**: Change puppy context without losing current view or progress
 - **Responsive Design**: Mobile-first approach with touch-friendly controls
 
 ### **Data Integrity**
-- **Automatic Age Calculation**: Reduces user error in age classification
-- **Structured Data Model**: Consistent data formats across all storage operations
-- **Backup/Restore**: JSON-based exports ensure data portability
-- **Version Control**: Database recreation ensures clean slate with app updates
+- **Complete Data Isolation**: Each puppy's data is completely separate with zero cross-contamination
+- **Automatic Age Calculation**: Reduces user error in age classification per puppy
+- **Structured Data Model**: Consistent data formats across all storage operations with puppy-specific keys
+- **Multi-Puppy Backup/Restore**: JSON-based exports include all puppy profiles and their data
+- **Version Control**: Database recreation ensures clean slate with app updates while preserving puppy separation
+- **Safe Deletion**: Prevents deletion of the last remaining puppy profile
 
 ### **Accessibility & Performance**
 - **Semantic HTML**: Proper heading structure and ARIA labels
@@ -138,35 +168,64 @@ PrepTracker/
 ## Usage Workflow
 
 ### **Initial Setup**
-1. User creates puppy profile with basic information
-2. App calculates current age stage automatically
-3. Training areas populate with age-appropriate milestones
+1. **First Time Users**: Click "Add Your First Puppy" to create initial profile
+2. **App Setup**: App calculates current age stage automatically per puppy
+3. **Dashboard Access**: Training areas populate with age-appropriate milestones for selected puppy
 
-### **Daily Usage**
-1. User selects relevant age stage using radio buttons in any training area
-2. Reviews milestone expectations for each training area
-3. Logs training activities with notes and optional video
-4. Updates progress sliders as skills develop
-5. Accesses e-learning materials via file icons in headers
+### **Multi-Puppy Management**
+1. **Puppy Dashboard**: Start at "My Puppies" to view all profiles and select active puppy
+2. **Add Puppies**: Use "Add New Puppy" button to create additional profiles
+3. **Switch Context**: Click "Select" on any puppy card to change active puppy
+4. **Edit/Delete**: Use individual puppy card actions for profile management
 
-### **Progress Monitoring**
-1. Visual progress indicators show development over time
-2. Activity logs maintain detailed training history
-3. Age-stage progression guides training focus
-4. Supporting documents provide specialized guidance
+### **Daily Usage** (Per Puppy)
+1. **Select Puppy**: Choose active puppy from dashboard
+2. **View Progress**: Navigate to Progress Chart to see current puppy's development
+3. **Age Selection**: Use radio buttons in training areas to select relevant age stage
+4. **Review Milestones**: Check age-specific expectations for each training area
+5. **Log Activities**: Record training sessions with notes and optional video for current puppy
+6. **Update Progress**: Adjust sliders as skills develop for the selected puppy
+7. **E-Learning**: Access materials via file icons in headers
 
-### **Data Management**
-1. Regular backups ensure data security
-2. Import/export enables data sharing between devices
-3. Reset functionality allows fresh starts when needed
+### **Progress Monitoring** (Multi-Puppy)
+1. **Individual Tracking**: Each puppy has separate visual progress indicators
+2. **Puppy-Specific Logs**: Activity histories are maintained per puppy
+3. **Comparative Overview**: Dashboard shows all puppies' current status
+4. **Age-Stage Guidance**: Training focus guides adapt to each puppy's development stage
+
+### **Data Management** (All Puppies)
+1. **Comprehensive Backups**: Export includes all puppy profiles and their complete data
+2. **Multi-Device Sync**: Import/export enables data sharing with all puppy information
+3. **Safe Operations**: Reset functionality preserves data integrity across puppies
+4. **Profile Protection**: System prevents accidental deletion of last remaining puppy
 
 ## Development Status
 
-The application is feature-complete for core puppy training tracking functionality, with a robust foundation for future enhancements such as:
-- Cloud synchronization
+The application is feature-complete for comprehensive multi-puppy training tracking functionality, with a robust foundation for future enhancements such as:
+- Cloud synchronization across devices
 - Training plan templates
-- Progress analytics and reporting
-- Multi-puppy management
-- Trainer/coordinator dashboards
+- Progress analytics and reporting across multiple puppies
+- Advanced multi-puppy comparison dashboards
+- Trainer/coordinator oversight panels
+- Breeding program integration
+- Cross-puppy statistical analysis
 
-This PWA represents a comprehensive digital solution for guide dog puppy raising programs, combining structured tracking with user-friendly design and robust technical implementation.
+## Multi-Puppy System Benefits
+
+### **For Individual Raisers**
+- **Successive Puppies**: Track multiple puppies over time as you raise different dogs
+- **Comparison**: See how different puppies progress through similar stages
+- **Experience Building**: Learn from patterns across multiple training journeys
+
+### **For Organizations**
+- **Litter Tracking**: Monitor entire litters through the PREP program
+- **Volunteer Management**: Support volunteers raising multiple puppies
+- **Program Oversight**: Aggregate data across multiple puppy raisers
+
+### **Technical Advantages**
+- **Scalability**: Unlimited puppy profiles without performance impact
+- **Data Isolation**: Complete separation ensures training records never mix
+- **Backwards Compatibility**: Existing single-puppy installations work seamlessly
+- **Storage Efficiency**: Optimized data structures minimize storage overhead per puppy
+
+This PWA represents a comprehensive digital solution for guide dog puppy raising programs, combining structured multi-puppy tracking with user-friendly design and robust technical implementation. The system scales from individual puppy raisers to organizational breeding programs while maintaining data integrity and user experience excellence.
