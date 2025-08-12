@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.24';
+        this.APP_VERSION = '1.0.25';
         this.currentView = 'puppies';
         this.currentAge = '12weeks';
         this.currentPuppyId = null;
@@ -610,12 +610,8 @@ class PREPTrackerApp {
                                 </div>
                                 <div class="progress-log-form" style="display: none;">
                                     <div class="form-group">
-                                        <label for="logDate-${area.id}">Date</label>
-                                        <input type="date" id="logDate-${area.id}" class="log-date">
-                                    </div>
-                                    <div class="form-group">
                                         <label for="logNotes-${area.id}">Notes</label>
-                                        <textarea id="logNotes-${area.id}" class="log-notes" rows="4" placeholder="Add training notes, observations, or progress details..."></textarea>
+                                        <div id="logNotesEditor-${area.id}" class="log-notes-editor"></div>
                                     </div>
                                     <div class="form-group">
                                         <label for="logVideo-${area.id}">Video (Optional)</label>
@@ -833,19 +829,26 @@ class PREPTrackerApp {
     showProgressForm(element, area) {
         const form = element.querySelector('.progress-log-form');
         const addBtn = element.querySelector('.add-entry-btn');
-        const dateInput = element.querySelector('.log-date');
-        const notesInput = element.querySelector('.log-notes');
+        const notesEditor = element.querySelector(`#logNotesEditor-${area.id}`);
 
         // Show form and hide add button
         form.style.display = 'block';
         addBtn.style.display = 'none';
 
-        // Set default values
-        dateInput.value = new Date().toISOString().split('T')[0];
-        notesInput.value = '';
+        // Initialize Quill editor
+        this.quill = new Quill(notesEditor, {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, false] }],
+                    ['bold', 'italic', 'underline'],
+                    ['image', 'code-block']
+                ]
+            }
+        });
 
         // Focus on notes input
-        setTimeout(() => notesInput.focus(), 100);
+        setTimeout(() => this.quill.focus(), 100);
     }
 
     hideProgressForm(element) {
@@ -866,15 +869,13 @@ class PREPTrackerApp {
     }
 
     async saveProgressEntry(element, area) {
-        const dateInput = element.querySelector('.log-date');
-        const notesInput = element.querySelector('.log-notes');
         const videoInput = element.querySelector('.log-video');
 
-        const date = dateInput.value;
-        const notes = notesInput.value.trim();
+        const date = new Date().toISOString().split('T')[0];
+        const notes = this.quill.root.innerHTML;
 
-        if (!date || !notes) {
-            this.showToast('Please fill in date and notes', 'error');
+        if (!notes.trim()) {
+            this.showToast('Please fill in notes', 'error');
             return;
         }
 
