@@ -39,6 +39,7 @@
                 <h1 class="app-title">
                     <span class="paw-icon">🐕‍🦺</span>
                     PREP Tracker
+                    <span id="appVersion" class="app-version"></span>
                 </h1>
                 <button id="menuBtn" class="menu-btn">
                     <span class="hamburger"></span>
@@ -59,6 +60,10 @@
                 <button class="nav-item" data-view="progress">
                     <span class="nav-icon">📊</span>
                     Progress Chart
+                </button>
+                <button class="nav-item" data-view="logs">
+                    <span class="nav-icon">📝</span>
+                    Training Logs
                 </button>
                 <button class="nav-item" data-view="supporting">
                     <span class="nav-icon">📚</span>
@@ -158,6 +163,57 @@
                 
                 <div id="progressGrid" class="progress-grid">
                     <!-- Training areas will be dynamically generated -->
+                </div>
+            </div>
+
+            <!-- Training Logs View -->
+            <div id="logsView" class="view" style="display: none;">
+                <div class="view-header">
+                    <div class="logs-header-left">
+                        <h2 id="logsTitle">Training Logs</h2>
+                        <p>Central logging system for all training activities and progress</p>
+                        <button id="addNewLogBtn" class="primary-btn small-btn">
+                            📝 Add New Log Entry
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="logs-container">
+                    <div class="logs-header">
+                        <div class="logs-controls">
+                            <div class="filter-controls">
+                                <select id="logBehaviorFilter" class="filter-select">
+                                    <option value="all">All Behaviours</option>
+                                    <option value="toileting">Toileting Routine</option>
+                                    <option value="play">Learning to Play</option>
+                                    <option value="greeting">Greeting People</option>
+                                    <option value="manners">Learning Manners</option>
+                                    <option value="transport">Travel and Transport</option>
+                                    <option value="walking">Walking on a Lead</option>
+                                    <option value="recall">Recall and Off Lead Exercise</option>
+                                    <option value="handling">Handling, Grooming and Equipment</option>
+                                    <option value="outing">Being Out and About</option>
+                                    <option value="social">Social Behaviours and Settling</option>
+                                </select>
+                                
+                                <select id="logMilestoneFilter" class="filter-select">
+                                    <option value="all">All Milestones</option>
+                                    <option value="12weeks">3 Months (12 Weeks)</option>
+                                    <option value="juvenile">6 Months (Juvenile)</option>
+                                    <option value="adolescent">9 Months (Adolescent)</option>
+                                    <option value="12months">12+ Months</option>
+                                </select>
+                                
+                                <input type="date" id="logDateFilter" class="filter-input" placeholder="Filter by date">
+                                
+                                <button id="clearFilters" class="secondary-btn">Clear Filters</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="logsContent" class="logs-content">
+                        <!-- Logs will be dynamically loaded here -->
+                    </div>
                 </div>
             </div>
 
@@ -346,10 +402,10 @@
                     </div>
                     
                     <div class="tool-card">
-                        <div class="tool-icon">🔍</div>
-                        <h3>Debug Activities</h3>
-                        <p>Check stored activities (temporary debug tool)</p>
-                        <button id="debugBtn" class="tool-btn">Debug Activities</button>
+                        <div class="tool-icon">⚙️</div>
+                        <h3>Changelog</h3>
+                        <p>See what's new in the latest version</p>
+                        <button id="changelogBtn" class="tool-btn">Show Changelog</button>
                     </div>
                 </div>
             </div>
@@ -378,6 +434,90 @@
                 <div class="modal-footer">
                     <button id="saveActivity" class="primary-btn">Save Activity</button>
                     <button id="cancelActivity" class="secondary-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Log Entry Modal -->
+        <div id="newLogModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="newLogTitle">Add New Training Log Entry</h3>
+                    <button id="closeNewLogModal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="log-entry-form">
+                        <div class="form-group">
+                            <label for="logEntryDate">Date *</label>
+                            <input type="date" id="logEntryDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="logEntryBehavior">Behavior/Training Area *</label>
+                            <select id="logEntryBehavior" required>
+                                <option value="">Select behavior...</option>
+                                <option value="toileting">Toileting Routine</option>
+                                <option value="play">Learning to Play</option>
+                                <option value="greeting">Greeting People</option>
+                                <option value="manners">Learning Manners</option>
+                                <option value="transport">Travel and Transport</option>
+                                <option value="walking">Walking on a Lead</option>
+                                <option value="recall">Recall and Off Lead Exercise</option>
+                                <option value="handling">Handling, Grooming and Equipment</option>
+                                <option value="outing">Being Out and About</option>
+                                <option value="social">Social Behaviours and Settling</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="logEntryMilestone">Training Milestone *</label>
+                            <select id="logEntryMilestone" required>
+                                <option value="">Select milestone...</option>
+                                <option value="12weeks">3 Months (12 Weeks)</option>
+                                <option value="juvenile">6 Months (Juvenile)</option>
+                                <option value="adolescent">9 Months (Adolescent)</option>
+                                <option value="12months">12+ Months</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="logEntryNotes">Training Notes *</label>
+                            <div id="logEntryNotesEditor"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="logEntryVideo">Attach Video (Optional)</label>
+                            <div class="video-upload-section">
+                                <input type="file" id="logEntryVideo" accept="video/*" style="display: none;">
+                                <button type="button" id="logVideoUploadBtn" class="secondary-btn small-btn">
+                                    📹 Choose Video File
+                                </button>
+                                <div id="logVideoPreview" class="video-preview" style="display: none;">
+                                    <div class="video-info">
+                                        <span id="logVideoFileName"></span>
+                                        <button type="button" id="removeLogVideoBtn">&times;</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveLogEntry" class="primary-btn">Save Log Entry</button>
+                    <button id="cancelLogEntry" class="secondary-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Changelog Modal -->
+        <div id="changelogModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="changelogTitle">What's New</h3>
+                    <button id="closeChangelogModal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <ul id="changelogList"></ul>
                 </div>
             </div>
         </div>

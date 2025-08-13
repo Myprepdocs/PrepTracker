@@ -1,4 +1,4 @@
-const APP_VERSION = '1.0.25';
+const APP_VERSION = '1.0.27';
 const CACHE_NAME = `prep-tracker-v${APP_VERSION}`;
 const DB_NAME = 'PREPTracker';
 const VERSION_STORAGE_KEY = 'prep_tracker_version';
@@ -172,11 +172,37 @@ async function checkAndHandleVersionChange() {
       await recreateIndexedDB();
       await setStoredVersion(APP_VERSION);
       console.log('Database recreated for version:', APP_VERSION);
+      
+      const changelog = await getChangelog();
+      if (changelog) {
+        self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'SHOW_CHANGELOG',
+              changelog: changelog
+            });
+          });
+        });
+      }
     } else {
       console.log('Version unchanged, no database recreation needed');
     }
   } catch (error) {
     console.error('Version check failed:', error);
+  }
+}
+
+async function getChangelog() {
+  try {
+    const response = await fetch('/changelog.json');
+    if (!response.ok) {
+      throw new Error('Failed to fetch changelog');
+    }
+    const changelog = await response.json();
+    return changelog[APP_VERSION];
+  } catch (error) {
+    console.error('Failed to get changelog:', error);
+    return null;
   }
 }
 

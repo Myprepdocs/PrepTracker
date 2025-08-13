@@ -456,6 +456,97 @@ class StorageService {
         }
     }
 
+    // Log Entry Management Methods
+    async saveLogEntry(logEntryData, profileId) {
+        if (!profileId) return null;
+        
+        const logEntry = {
+            id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9),
+            profileId,
+            ...logEntryData,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        if (this.isIndexedDBAvailable && this.db) {
+            return this.saveToIndexedDB(this.stores.activities, logEntry);
+        } else {
+            return this.saveToLocalStorage(this.stores.activities, logEntry);
+        }
+    }
+    
+    async getAllLogEntries(profileId) {
+        if (!profileId) return [];
+        
+        if (this.isIndexedDBAvailable && this.db) {
+            return this.getAllLogEntriesFromIndexedDB(profileId);
+        } else {
+            return this.getAllLogEntriesFromLocalStorage(profileId);
+        }
+    }
+    
+    async getAllLogEntriesFromIndexedDB(profileId) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([this.stores.activities], 'readonly');
+            const store = transaction.objectStore(this.stores.activities);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const activities = request.result || [];
+                const filtered = activities.filter(activity => 
+                    activity.profileId === profileId
+                );
+                // Sort by date descending (newest first)
+                resolve(filtered.sort((a, b) => new Date(b.date) - new Date(a.date)));
+            };
+            request.onerror = () => reject(new Error('Failed to get log entries'));
+        });
+    }
+    
+    async getAllLogEntriesFromLocalStorage(profileId) {
+        try {
+            const key = `PREPTracker_${this.stores.activities}`;
+            const activities = JSON.parse(localStorage.getItem(key) || '[]');
+            const filtered = activities.filter(activity => 
+                activity.profileId === profileId
+            );
+            // Sort by date descending (newest first)
+            return Promise.resolve(filtered.sort((a, b) => new Date(b.date) - new Date(a.date)));
+        } catch (error) {
+            return Promise.reject(new Error(`LocalStorage log entries get failed: ${error.message}`));
+        }
+    }
+    
+    async getFilteredLogEntries(profileId, filters = {}) {
+        const allEntries = await this.getAllLogEntries(profileId);
+        
+        let filtered = allEntries;
+        
+        if (filters.behavior && filters.behavior !== 'all') {
+            filtered = filtered.filter(entry => entry.trainingArea === filters.behavior);
+        }
+        
+        if (filters.milestone && filters.milestone !== 'all') {
+            filtered = filtered.filter(entry => entry.ageRange === filters.milestone);
+        }
+        
+        if (filters.date) {
+            filtered = filtered.filter(entry => entry.date === filters.date);
+        }
+        
+        return filtered;
+    }
+    
+    async deleteLogEntry(logEntryId, profileId) {
+        if (!logEntryId || !profileId) return false;
+        
+        if (this.isIndexedDBAvailable && this.db) {
+            return this.deleteFromIndexedDB(this.stores.activities, logEntryId);
+        } else {
+            return this.deleteFromLocalStorage(this.stores.activities, logEntryId);
+        }
+    }
+
     // Utility methods
     calculateAge(birthDate) {
         if (!birthDate) {

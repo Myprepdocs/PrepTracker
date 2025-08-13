@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.25';
+        this.APP_VERSION = '1.0.27';
         this.currentView = 'puppies';
         this.currentAge = '12weeks';
         this.currentPuppyId = null;
@@ -147,6 +147,9 @@ class PREPTrackerApp {
 
     async init() {
         try {
+            // Set version number in UI
+            this.setVersionNumber();
+            
             // Register service worker and handle updates
             await this.registerServiceWorker();
             
@@ -226,6 +229,12 @@ class PREPTrackerApp {
         });
         document.getElementById('fileInput').addEventListener('change', this.importData.bind(this));
         document.getElementById('resetBtn').addEventListener('click', this.resetData.bind(this));
+        document.getElementById('changelogBtn').addEventListener('click', async () => {
+            const changelog = await getChangelog();
+            if (changelog) {
+                this.showChangelogModal(changelog);
+            }
+        });
         
         // Debug tool (temporary)
         if (document.getElementById('debugBtn')) {
@@ -274,6 +283,13 @@ class PREPTrackerApp {
         } else if (viewName === 'progress') {
             if (this.currentPuppyId) {
                 this.renderProgressGrid();
+            } else {
+                this.showToast('Please select a puppy first', 'warning');
+                this.showView('puppies');
+            }
+        } else if (viewName === 'logs') {
+            if (this.currentPuppyId) {
+                this.renderLogsView();
             } else {
                 this.showToast('Please select a puppy first', 'warning');
                 this.showView('puppies');
@@ -688,11 +704,11 @@ class PREPTrackerApp {
             this.handleProgressChange(e, area);
         });
 
-        // Progress Log button - toggle accordion
+        // Progress Log button - redirect to central logging system
         const logBtn = element.querySelector('.log-btn');
         logBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.toggleProgressAccordion(element, area);
+            this.redirectToLogsWithFilter(area.id, this.currentAge);
         });
         
         // Training Activities button
@@ -1580,6 +1596,9 @@ class PREPTrackerApp {
             if (event.data && event.data.type === 'VERSION_MISMATCH') {
                 console.log('Version mismatch detected by service worker');
                 this.showVersionMismatchNotification();
+            } else if (event.data && event.data.type === 'SHOW_CHANGELOG') {
+                console.log('Changelog received from service worker');
+                this.showChangelogModal(event.data.changelog);
             }
         });
 
@@ -1741,6 +1760,503 @@ class PREPTrackerApp {
         }, 300000); // Show again in 5 minutes
     }
 
+    showChangelogModal(changelog) {
+        const modal = document.getElementById('changelogModal');
+        const changelogList = document.getElementById('changelogList');
+        changelogList.innerHTML = changelog.map(item => `<li>${item}</li>`).join('');
+        modal.style.display = 'flex';
+
+        const closeBtn = document.getElementById('closeChangelogModal');
+        closeBtn.onclick = () => {
+            modal.style.display = 'none';
+        };
+
+        modal.onclick = (e) => {
+            if (e.target.id === 'changelogModal') {
+                modal.style.display = 'none';
+            }
+        };
+    }
+
+    // Redirect to central logging system with filters
+    redirectToLogsWithFilter(behaviorId, milestone) {
+        if (!this.currentPuppyId) {
+            this.showToast('Please select a puppy first', 'warning');
+            return;
+        }
+
+        // Switch to logs view
+        this.showView('logs');
+        
+        // Apply filters after the view is rendered
+        setTimeout(() => {
+            document.getElementById('logBehaviorFilter').value = behaviorId;
+            document.getElementById('logMilestoneFilter').value = milestone;
+            this.applyLogFilters();
+        }, 100);
+        
+        // Store context for new log modal
+        this.pendingLogPrefill = {behavior: behaviorId, milestone};
+    }
+
+    // Central Logging System Methods
+    async renderLogsView() {
+        try {
+            this.setupLogsEventListeners();
+            await this.loadAndDisplayLogs();
+        } catch (error) {
+            console.error('Failed to render logs view:', error);
+            this.showToast('Failed to load training logs', 'error');
+        }
+    }
+    
+    setupLogsEventListeners() {
+        // Add new log entry button
+        const addNewLogBtn = document.getElementById('addNewLogBtn');
+        if (addNewLogBtn && !addNewLogBtn.hasAttribute('data-listener-added')) {
+            addNewLogBtn.addEventListener('click', () => {
+                this.showNewLogModal(this.pendingLogPrefill || {});
+            });
+            addNewLogBtn.setAttribute('data-listener-added', 'true');
+        }
+        
+        // Filter controls
+        const behaviorFilter = document.getElementById('logBehaviorFilter');
+        const milestoneFilter = document.getElementById('logMilestoneFilter');
+        const dateFilter = document.getElementById('logDateFilter');
+        const clearFilters = document.getElementById('clearFilters');
+        
+        if (behaviorFilter && !behaviorFilter.hasAttribute('data-listener-added')) {
+            behaviorFilter.addEventListener('change', () => this.applyLogFilters());
+            behaviorFilter.setAttribute('data-listener-added', 'true');
+        }
+        
+        if (milestoneFilter && !milestoneFilter.hasAttribute('data-listener-added')) {
+            milestoneFilter.addEventListener('change', () => this.applyLogFilters());
+            milestoneFilter.setAttribute('data-listener-added', 'true');
+        }
+        
+        if (dateFilter && !dateFilter.hasAttribute('data-listener-added')) {
+            dateFilter.addEventListener('change', () => this.applyLogFilters());
+            dateFilter.setAttribute('data-listener-added', 'true');
+        }
+        
+        if (clearFilters && !clearFilters.hasAttribute('data-listener-added')) {
+            clearFilters.addEventListener('click', () => this.clearLogFilters());
+            clearFilters.setAttribute('data-listener-added', 'true');
+        }
+    }
+    
+    async loadAndDisplayLogs(filters = {}) {
+        try {
+            const logs = await window.storage.getFilteredLogEntries(this.currentPuppyId, filters);
+            this.displayLogs(logs);
+            this.updateLogsStats(logs);
+        } catch (error) {
+            console.error('Failed to load logs:', error);
+            this.showEmptyLogsMessage();
+        }
+    }
+    
+    displayLogs(logs) {
+        const logsContent = document.getElementById('logsContent');
+        
+        if (!logs || logs.length === 0) {
+            this.showEmptyLogsMessage();
+            return;
+        }
+        
+        logsContent.innerHTML = logs.map(log => this.createLogEntryHTML(log)).join('');
+        
+        // Add event listeners to log entry actions
+        this.addLogEntryEventListeners();
+    }
+    
+    createLogEntryHTML(log) {
+        const behaviorInfo = this.trainingAreas.find(area => area.id === log.trainingArea) || 
+                            { name: log.trainingArea, icon: '📝' };
+        
+        const milestoneLabels = {
+            '12weeks': '3 Months (12 Weeks)',
+            'juvenile': '6 Months (Juvenile)', 
+            'adolescent': '9 Months (Adolescent)',
+            '12months': '12+ Months'
+        };
+        
+        const formattedDate = new Date(log.date).toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long', 
+            day: 'numeric'
+        });
+        
+        return `
+            <div class="log-entry" data-log-id="${log.id}">
+                <div class="log-entry-header">
+                    <div class="log-entry-info">
+                        <div class="log-entry-date">${formattedDate}</div>
+                        <div class="log-entry-behavior">
+                            <span class="behavior-icon">${behaviorInfo.icon}</span>
+                            ${behaviorInfo.name}
+                        </div>
+                    </div>
+                    <div class="log-entry-milestone">
+                        ${milestoneLabels[log.ageRange] || log.ageRange}
+                    </div>
+                </div>
+                
+                <div class="log-entry-content">
+                    <div class="log-entry-notes">${log.notes}</div>
+                    ${log.video ? `
+                        <div class="log-entry-video">
+                            <span class="video-icon">📹</span>
+                            <span class="video-name">${log.video.name}</span>
+                            <span class="video-size">(${Math.round(log.video.size / 1024 / 1024 * 100) / 100} MB)</span>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="log-entry-actions">
+                    <button class="secondary-btn edit-log-btn" data-log-id="${log.id}">Edit</button>
+                    <button class="secondary-btn delete-log-btn" data-log-id="${log.id}">Delete</button>
+                </div>
+            </div>
+        `;
+    }
+    
+    addLogEntryEventListeners() {
+        const editBtns = document.querySelectorAll('.edit-log-btn');
+        const deleteBtns = document.querySelectorAll('.delete-log-btn');
+        
+        editBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const logId = e.target.dataset.logId;
+                this.editLogEntry(logId);
+            });
+        });
+        
+        deleteBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const logId = e.target.dataset.logId;
+                this.deleteLogEntry(logId);
+            });
+        });
+    }
+    
+    showEmptyLogsMessage() {
+        const logsContent = document.getElementById('logsContent');
+        logsContent.innerHTML = `
+            <div class="empty-logs">
+                <div class="empty-icon">📝</div>
+                <h3>No Training Logs Yet</h3>
+                <p>Start logging your puppy's training activities and progress to track their development.</p>
+                <button class="primary-btn" onclick="app.showNewLogModal()">Add Your First Log Entry</button>
+            </div>
+        `;
+    }
+    
+    updateLogsStats(logs) {
+        // Calculate stats from logs
+        const totalLogs = logs.length;
+        const behaviorCounts = {};
+        const milestoneCounts = {};
+        
+        logs.forEach(log => {
+            behaviorCounts[log.trainingArea] = (behaviorCounts[log.trainingArea] || 0) + 1;
+            milestoneCounts[log.ageRange] = (milestoneCounts[log.ageRange] || 0) + 1;
+        });
+        
+        const mostActiveArea = Object.keys(behaviorCounts).reduce((a, b) => 
+            behaviorCounts[a] > behaviorCounts[b] ? a : b, Object.keys(behaviorCounts)[0] || 'none');
+        
+        // Create or update stats display
+        let statsDiv = document.querySelector('.logs-stats');
+        if (!statsDiv) {
+            statsDiv = document.createElement('div');
+            statsDiv.className = 'logs-stats';
+            const logsContent = document.getElementById('logsContent');
+            logsContent.parentNode.insertBefore(statsDiv, logsContent);
+        }
+        
+        const mostActiveAreaInfo = this.trainingAreas.find(area => area.id === mostActiveArea);
+        
+        statsDiv.innerHTML = `
+            <div class="logs-stat">
+                <div class="logs-stat-value">${totalLogs}</div>
+                <div class="logs-stat-label">Total Entries</div>
+            </div>
+            <div class="logs-stat">
+                <div class="logs-stat-value">${Object.keys(behaviorCounts).length}</div>
+                <div class="logs-stat-label">Areas Covered</div>
+            </div>
+            <div class="logs-stat">
+                <div class="logs-stat-value">${mostActiveAreaInfo ? mostActiveAreaInfo.name : 'None'}</div>
+                <div class="logs-stat-label">Most Active Area</div>
+            </div>
+        `;
+    }
+    
+    applyLogFilters() {
+        const behaviorFilter = document.getElementById('logBehaviorFilter').value;
+        const milestoneFilter = document.getElementById('logMilestoneFilter').value;
+        const dateFilter = document.getElementById('logDateFilter').value;
+        
+        const filters = {};
+        if (behaviorFilter && behaviorFilter !== 'all') filters.behavior = behaviorFilter;
+        if (milestoneFilter && milestoneFilter !== 'all') filters.milestone = milestoneFilter;
+        if (dateFilter) filters.date = dateFilter;
+        
+        this.loadAndDisplayLogs(filters);
+        this.showActiveFilters(filters);
+    }
+    
+    showActiveFilters(filters) {
+        let activeFiltersDiv = document.querySelector('.active-filters');
+        if (!activeFiltersDiv && Object.keys(filters).length > 0) {
+            activeFiltersDiv = document.createElement('div');
+            activeFiltersDiv.className = 'active-filters';
+            const logsContent = document.getElementById('logsContent');
+            logsContent.parentNode.insertBefore(activeFiltersDiv, logsContent);
+        }
+        
+        if (Object.keys(filters).length === 0) {
+            if (activeFiltersDiv) activeFiltersDiv.remove();
+            return;
+        }
+        
+        const filterChips = Object.entries(filters).map(([key, value]) => {
+            let label = value;
+            if (key === 'behavior') {
+                const area = this.trainingAreas.find(a => a.id === value);
+                label = area ? area.name : value;
+            } else if (key === 'milestone') {
+                const labels = {
+                    '12weeks': '3 Months',
+                    'juvenile': '6 Months', 
+                    'adolescent': '9 Months',
+                    '12months': '12+ Months'
+                };
+                label = labels[value] || value;
+            }
+            
+            return `<div class="filter-chip">${label} <button onclick="app.removeFilter('${key}')">&times;</button></div>`;
+        });
+        
+        activeFiltersDiv.innerHTML = filterChips.join('');
+    }
+    
+    removeFilter(filterKey) {
+        if (filterKey === 'behavior') {
+            document.getElementById('logBehaviorFilter').value = 'all';
+        } else if (filterKey === 'milestone') {
+            document.getElementById('logMilestoneFilter').value = 'all';
+        } else if (filterKey === 'date') {
+            document.getElementById('logDateFilter').value = '';
+        }
+        this.applyLogFilters();
+    }
+    
+    clearLogFilters() {
+        document.getElementById('logBehaviorFilter').value = 'all';
+        document.getElementById('logMilestoneFilter').value = 'all';
+        document.getElementById('logDateFilter').value = '';
+        this.loadAndDisplayLogs();
+        
+        const activeFiltersDiv = document.querySelector('.active-filters');
+        if (activeFiltersDiv) activeFiltersDiv.remove();
+    }
+    
+    showNewLogModal(prefill = {}) {
+        const modal = document.getElementById('newLogModal');
+        
+        // Setup modal event listeners
+        this.setupNewLogModalEventListeners();
+        
+        // Reset form
+        document.getElementById('logEntryDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('logEntryBehavior').value = '';
+        document.getElementById('logEntryMilestone').value = '';
+        
+        // Use pending prefill if available, otherwise use provided prefill
+        const actualPrefill = this.pendingLogPrefill || prefill;
+        
+        // Apply prefill parameters
+        if (actualPrefill.behavior) document.getElementById('logEntryBehavior').value = actualPrefill.behavior;
+        if (actualPrefill.milestone) document.getElementById('logEntryMilestone').value = actualPrefill.milestone;
+        
+        // Clear pending prefill once consumed
+        this.pendingLogPrefill = null;
+        
+        // Initialize Quill editor
+        const editorContainer = document.getElementById('logEntryNotesEditor');
+        editorContainer.innerHTML = ''; // Clear any existing content
+        
+        this.logQuill = new Quill(editorContainer, {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, false] }],
+                    ['bold', 'italic', 'underline'],
+                    ['image', 'code-block'],
+                    ['link']
+                ]
+            }
+        });
+        
+        // Reset video upload
+        document.getElementById('logEntryVideo').value = '';
+        document.getElementById('logVideoPreview').style.display = 'none';
+        document.getElementById('logVideoUploadBtn').textContent = '📹 Choose Video File';
+        
+        modal.style.display = 'flex';
+        setTimeout(() => this.logQuill.focus(), 100);
+    }
+    
+    setupNewLogModalEventListeners() {
+        // Close modal
+        const closeBtn = document.getElementById('closeNewLogModal');
+        const cancelBtn = document.getElementById('cancelLogEntry');
+        
+        if (closeBtn && !closeBtn.hasAttribute('data-listener-added')) {
+            closeBtn.addEventListener('click', () => this.closeNewLogModal());
+            closeBtn.setAttribute('data-listener-added', 'true');
+        }
+        
+        if (cancelBtn && !cancelBtn.hasAttribute('data-listener-added')) {
+            cancelBtn.addEventListener('click', () => this.closeNewLogModal());
+            cancelBtn.setAttribute('data-listener-added', 'true');
+        }
+        
+        // Save button
+        const saveBtn = document.getElementById('saveLogEntry');
+        if (saveBtn && !saveBtn.hasAttribute('data-listener-added')) {
+            saveBtn.addEventListener('click', () => this.saveNewLogEntry());
+            saveBtn.setAttribute('data-listener-added', 'true');
+        }
+        
+        // Video upload
+        const videoUploadBtn = document.getElementById('logVideoUploadBtn');
+        const videoInput = document.getElementById('logEntryVideo');
+        const removeVideoBtn = document.getElementById('removeLogVideoBtn');
+        
+        if (videoUploadBtn && !videoUploadBtn.hasAttribute('data-listener-added')) {
+            videoUploadBtn.addEventListener('click', () => videoInput.click());
+            videoUploadBtn.setAttribute('data-listener-added', 'true');
+        }
+        
+        if (videoInput && !videoInput.hasAttribute('data-listener-added')) {
+            videoInput.addEventListener('change', (e) => this.handleLogVideoUpload(e));
+            videoInput.setAttribute('data-listener-added', 'true');
+        }
+        
+        if (removeVideoBtn && !removeVideoBtn.hasAttribute('data-listener-added')) {
+            removeVideoBtn.addEventListener('click', () => this.removeLogVideo());
+            removeVideoBtn.setAttribute('data-listener-added', 'true');
+        }
+        
+        // Close modal on outside click
+        const modal = document.getElementById('newLogModal');
+        if (modal && !modal.hasAttribute('data-listener-added')) {
+            modal.addEventListener('click', (e) => {
+                if (e.target.id === 'newLogModal') {
+                    this.closeNewLogModal();
+                }
+            });
+            modal.setAttribute('data-listener-added', 'true');
+        }
+    }
+    
+    handleLogVideoUpload(e) {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('logVideoFileName').textContent = file.name;
+            document.getElementById('logVideoPreview').style.display = 'block';
+            document.getElementById('logVideoUploadBtn').textContent = '📹 Change Video File';
+        }
+    }
+    
+    removeLogVideo() {
+        document.getElementById('logEntryVideo').value = '';
+        document.getElementById('logVideoPreview').style.display = 'none';
+        document.getElementById('logVideoUploadBtn').textContent = '📹 Choose Video File';
+    }
+    
+    closeNewLogModal() {
+        document.getElementById('newLogModal').style.display = 'none';
+        if (this.logQuill) {
+            this.logQuill = null;
+        }
+    }
+    
+    async saveNewLogEntry() {
+        const date = document.getElementById('logEntryDate').value;
+        const behavior = document.getElementById('logEntryBehavior').value;
+        const milestone = document.getElementById('logEntryMilestone').value;
+        const notes = this.logQuill.root.innerHTML;
+        const videoInput = document.getElementById('logEntryVideo');
+        
+        // Validation
+        if (!date || !behavior || !milestone || !notes.trim()) {
+            this.showToast('Please fill in all required fields', 'error');
+            return;
+        }
+        
+        try {
+            const logData = {
+                date,
+                trainingArea: behavior,
+                ageRange: milestone,
+                notes
+            };
+            
+            // Handle video if uploaded
+            if (videoInput.files && videoInput.files[0]) {
+                const videoFile = videoInput.files[0];
+                logData.video = {
+                    name: videoFile.name,
+                    size: videoFile.size,
+                    type: videoFile.type,
+                    lastModified: videoFile.lastModified
+                };
+            }
+            
+            await window.storage.saveLogEntry(logData, this.currentPuppyId);
+            
+            this.closeNewLogModal();
+            this.showToast('Training log entry saved successfully', 'success');
+            
+            // Refresh the logs view
+            await this.loadAndDisplayLogs();
+            
+        } catch (error) {
+            console.error('Failed to save log entry:', error);
+            this.showToast('Failed to save log entry', 'error');
+        }
+    }
+    
+    async editLogEntry(logId) {
+        // For now, show a simple message - full edit functionality can be added later
+        this.showToast('Edit functionality coming soon', 'info');
+    }
+    
+    async deleteLogEntry(logId) {
+        if (!confirm('Are you sure you want to delete this log entry? This action cannot be undone.')) {
+            return;
+        }
+        
+        try {
+            await window.storage.deleteLogEntry(logId, this.currentPuppyId);
+            this.showToast('Log entry deleted successfully', 'success');
+            
+            // Refresh the logs view
+            await this.loadAndDisplayLogs();
+            
+        } catch (error) {
+            console.error('Failed to delete log entry:', error);
+            this.showToast('Failed to delete log entry', 'error');
+        }
+    }
+
     // Version compatibility check
     checkVersionCompatibility() {
         const storedVersion = localStorage.getItem('app_version');
@@ -1749,6 +2265,27 @@ class PREPTrackerApp {
             this.showToast('App updated! Some features may have been improved.', 'info');
         }
         localStorage.setItem('app_version', this.APP_VERSION);
+    }
+
+    setVersionNumber() {
+        const versionElement = document.getElementById('appVersion');
+        if (versionElement) {
+            versionElement.textContent = `v${this.APP_VERSION}`;
+        }
+    }
+
+    async getChangelog() {
+        try {
+            const response = await fetch('/changelog.json');
+            if (!response.ok) {
+                throw new Error('Failed to fetch changelog');
+            }
+            const changelog = await response.json();
+            return changelog[this.APP_VERSION];
+        } catch (error) {
+            console.error('Failed to get changelog:', error);
+            return null;
+        }
     }
 }
 
