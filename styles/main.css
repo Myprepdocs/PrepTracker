@@ -109,7 +109,6 @@ body {
 .paw-icon {
     font-size: 3rem;
     margin-bottom: var(--spacing-md);
-    animation: bounce 2s infinite;
 }
 
 .loading-spinner {
@@ -448,6 +447,7 @@ body {
     padding: var(--spacing-sm);
     border-radius: var(--radius-md);
     transition: all var(--transition-fast);
+    display: none; /* Hidden by default, shown on mobile */
 }
 
 .menu-btn:hover {
@@ -460,6 +460,7 @@ body {
     height: 2px;
     background: currentColor;
     position: relative;
+    transition: all var(--transition-fast);
 }
 
 .hamburger::before,
@@ -470,6 +471,7 @@ body {
     height: 2px;
     background: currentColor;
     transition: all var(--transition-fast);
+    left: 0;
 }
 
 .hamburger::before {
@@ -478,6 +480,21 @@ body {
 
 .hamburger::after {
     bottom: -8px;
+}
+
+/* Hamburger animation when menu is open */
+.menu-btn.active .hamburger {
+    background: transparent;
+}
+
+.menu-btn.active .hamburger::before {
+    transform: rotate(45deg);
+    top: 0;
+}
+
+.menu-btn.active .hamburger::after {
+    transform: rotate(-45deg);
+    bottom: 0;
 }
 
 .puppy-info {
@@ -1827,13 +1844,65 @@ body {
         grid-template-columns: 1fr;
     }
     
+    /* Show hamburger menu button on mobile */
+    .menu-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Hide navigation menu by default on mobile */
+    .nav-menu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        display: none;
+        padding-top: 80px; /* Account for header height */
+    }
+    
+    .nav-menu.active {
+        display: block;
+        animation: fadeIn 0.3s ease-out;
+    }
+    
     .nav-content {
-        padding: 0 var(--spacing-md);
+        display: flex;
+        flex-direction: column;
+        background: var(--bg-primary);
+        margin: 0;
+        max-width: none;
+        padding: 0;
+        border-radius: var(--radius-lg);
+        margin: var(--spacing-lg);
+        box-shadow: var(--shadow-xl);
+        max-height: calc(100vh - 160px);
+        overflow-y: auto;
     }
     
     .nav-item {
-        padding: var(--spacing-md);
-        font-size: 0.85rem;
+        padding: var(--spacing-lg);
+        font-size: 1rem;
+        border-bottom: 1px solid var(--border-light);
+        border-radius: 0;
+        justify-content: flex-start;
+    }
+    
+    .nav-item:last-child {
+        border-bottom: none;
+    }
+    
+    .nav-item:hover {
+        background: var(--bg-secondary);
+    }
+    
+    .nav-item.active {
+        background: var(--primary-gradient);
+        color: var(--text-white);
+        border-bottom-color: transparent;
     }
     
     .modal-content {

@@ -98,7 +98,7 @@ class PREPTrackerApp {
             {
                 id: 'handling',
                 name: 'Handling, Grooming and Equipment',
-                icon: '✂️',
+                icon: '🪮',
                 class: 'handling',
                 milestones: {
                     '12weeks': 'I am happy to be gently lifted, carried and touched all over my body. I am being introduced to equipment without backing away.',
@@ -266,6 +266,15 @@ class PREPTrackerApp {
     }
 
     showView(viewName) {
+        // Close mobile menu if open
+        const navMenu = document.getElementById('navMenu');
+        const menuBtn = document.getElementById('menuBtn');
+        if (navMenu.classList.contains('active')) {
+            navMenu.classList.remove('active');
+            menuBtn.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
         // Update navigation
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
@@ -1543,8 +1552,19 @@ class PREPTrackerApp {
     }
 
     toggleMenu() {
-        // Mobile menu functionality if needed
-        console.log('Menu toggled');
+        const navMenu = document.getElementById('navMenu');
+        const menuBtn = document.getElementById('menuBtn');
+        
+        // Toggle menu visibility
+        navMenu.classList.toggle('active');
+        menuBtn.classList.toggle('active');
+        
+        // Prevent body scroll when menu is open
+        if (navMenu.classList.contains('active')) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
     }
 
     async exportData() {
