@@ -1,4 +1,4 @@
-const APP_VERSION = '1.0.27';
+const APP_VERSION = '1.0.29';
 const CACHE_NAME = `prep-tracker-v${APP_VERSION}`;
 const DB_NAME = 'PREPTracker';
 const VERSION_STORAGE_KEY = 'prep_tracker_version';
@@ -10,6 +10,7 @@ const CACHE_URLS = [
   '/styles/main.css',
   '/js/storage.js',
   '/js/app.js',
+  '/data/test-data.js',
   '/icon-192.png',
   '/icon-512.png'
 ];

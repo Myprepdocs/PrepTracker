@@ -1,0 +1,110 @@
+
+const testData = {
+  "profiles": [
+    {
+      "id": "1",
+      "name": "Buddy",
+      "dob": "2025-05-20",
+      "breed": "Labrador Retriever"
+    },
+    {
+      "id": "2",
+      "name": "Lucy",
+      "dob": "2025-02-10",
+      "breed": "Golden Retriever"
+    },
+    {
+      "id": "3",
+      "name": "Max",
+      "dob": "2024-08-15",
+      "breed": "German Shepherd"
+    },
+    {
+      "id": "4",
+      "name": "Daisy",
+      "dob": "2024-02-01",
+      "breed": "Labrador/Golden Retriever Cross"
+    }
+  ],
+  "currentProfileId": "1",
+  "progress": {},
+  "trainingLogs": {}
+};
+
+const trainingAreas = [
+  "toileting", "play", "greeting", "manners", 
+  "travel", "walking", "recall", "handling", 
+  "outAndAbout", "social"
+];
+
+const ageRanges = ["12weeks", "juvenile", "adolescent", "12months"];
+
+testData.profiles.forEach(profile => {
+  trainingAreas.forEach(area => {
+    ageRanges.forEach(age => {
+      const key = `${profile.id}_${area}_${age}`;
+      testData.progress[key] = Math.floor(Math.random() * 101);
+    });
+  });
+  testData.trainingLogs[profile.id] = [];
+});
+
+const initialTrainingActivities = {
+    "play": [
+      { "id": "play-001", "title": "Managing Mouthing - Basic Redirection" },
+      { "id": "play-002", "title": "Learning to Swap Items - Basic Exchange" },
+      { "id": "play-003", "title": "Tug Games - Stage 1: Engaging with Toy" },
+      { "id": "play-004", "title": "Tug Games - Stage 2: Teaching 'Drop'" },
+      { "id": "play-005", "title": "Interactive Food Toys - KONG Introduction" }
+    ],
+    "toileting": [
+      { "id": "toileting-001", "title": "House Training Setup - First Week" },
+      { "id": "toileting-002", "title": "Teaching 'Busy-Busy' Cue - Stage 1" },
+      { "id": "toileting-003", "title": "Developing Cue Timing - Stage 2" },
+      { "id": "toileting-004", "title": "Leash Relieving - Stage 4" },
+      { "id": "toileting-005", "title": "Different Surfaces - Stage 5" }
+    ],
+    "greeting": [
+      { "id": "greeting-001", "title": "Calm Settling with Known People" },
+      { "id": "greeting-002", "title": "Meeting Unfamiliar People" }
+    ],
+    "manners": [
+      { "id": "manners-001", "title": "Name Recognition and Attention" },
+      { "id": "manners-002", "title": "Sit Using Lure" },
+      { "id": "manners-003", "title": "Taking Food Politely" }
+    ],
+    "walking": [
+      { "id": "walking-001", "title": "Lead and Collar Introduction" },
+      { "id": "walking-002", "title": "Lead Walking at Home" }
+    ]
+};
+
+const outcomes = ["Excellent", "Good", "Needs Improvement", "Struggled"];
+const locations = ["Home", "Garden", "Park", "Street", "Training Class", "Public Transport"];
+
+testData.profiles.forEach(profile => {
+    let logIdCounter = 1;
+    const profileLogs = [];
+    const puppyDob = new Date(profile.dob);
+
+    for (const area in initialTrainingActivities) {
+        initialTrainingActivities[area].forEach(activity => {
+            const numLogs = Math.floor(Math.random() * 5) + 1; // 1 to 5 logs per activity
+            for (let i = 0; i < numLogs; i++) {
+                const logDate = new Date(puppyDob.getTime() + Math.random() * (new Date().getTime() - puppyDob.getTime()));
+                const log = {
+                    id: `${profile.id}-${logIdCounter++}`,
+                    date: logDate.toISOString().split('T')[0],
+                    area: area,
+                    activity: activity.title,
+                    notes: `Practiced ${activity.title.toLowerCase()}. Outcome was ${outcomes[Math.floor(Math.random() * outcomes.length)]}.`,
+                    location: locations[Math.floor(Math.random() * locations.length)],
+                    duration: Math.floor(Math.random() * 26) + 5, // 5 to 30 mins
+                    videoUrl: ''
+                };
+                profileLogs.push(log);
+            }
+        });
+    }
+    testData.trainingLogs[profile.id] = profileLogs.slice(0, 100); // Cap at 100 logs per puppy
+});

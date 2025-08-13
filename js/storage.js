@@ -186,10 +186,10 @@ class StorageService {
         if (!profileId) return null;
         
         const activity = {
-            id: Date.now().toString(),
+            id: activityData.id || Date.now().toString(),
             profileId,
             ...activityData,
-            createdAt: new Date().toISOString()
+            createdAt: activityData.createdAt || new Date().toISOString()
         };
 
         if (this.isIndexedDBAvailable && this.db) {
@@ -535,6 +535,42 @@ class StorageService {
         }
         
         return filtered;
+    }
+    
+    async getLogEntry(logEntryId, profileId) {
+        if (!logEntryId || !profileId) return null;
+        
+        if (this.isIndexedDBAvailable && this.db) {
+            return this.getFromIndexedDB(this.stores.activities, logEntryId);
+        } else {
+            return this.getFromLocalStorage(this.stores.activities, logEntryId);
+        }
+    }
+    
+    async updateLogEntry(logEntryId, logEntryData, profileId) {
+        if (!logEntryId || !profileId) return null;
+        
+        // Get existing log entry
+        const existingEntry = await this.getLogEntry(logEntryId, profileId);
+        if (!existingEntry) {
+            throw new Error('Log entry not found');
+        }
+        
+        // Update with new data but preserve original metadata
+        const updatedEntry = {
+            ...existingEntry,
+            ...logEntryData,
+            id: logEntryId,
+            profileId: profileId,
+            createdAt: existingEntry.createdAt,
+            updatedAt: new Date().toISOString()
+        };
+        
+        if (this.isIndexedDBAvailable && this.db) {
+            return this.saveToIndexedDB(this.stores.activities, updatedEntry);
+        } else {
+            return this.saveToLocalStorage(this.stores.activities, updatedEntry);
+        }
     }
     
     async deleteLogEntry(logEntryId, profileId) {

@@ -1,6 +1,6 @@
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = '1.0.27';
+        this.APP_VERSION = window.testData ? 'TEST_VERSION' : '1.0.29';
         this.currentView = 'puppies';
         this.currentAge = '12weeks';
         this.currentPuppyId = null;
@@ -159,6 +159,9 @@ class PREPTrackerApp {
             // Initialize storage
             await window.storage.init();
             
+            // Initialize video storage
+            await this.initVideoStorage();
+            
             // Load all puppy profiles
             await this.loadAllProfiles();
             
@@ -172,7 +175,7 @@ class PREPTrackerApp {
             this.hideLoadingScreen();
             
             // Show appropriate initial view
-            this.showView('puppies');
+            this.showView('dashboard');
             
         } catch (error) {
             console.error('App initialization failed:', error);
@@ -287,6 +290,13 @@ class PREPTrackerApp {
                 this.showToast('Please select a puppy first', 'warning');
                 this.showView('puppies');
             }
+        } else if (viewName === 'dashboard') {
+            if (this.currentPuppyId) {
+                this.renderDashboard();
+            } else {
+                this.showToast('Please select a puppy first', 'warning');
+                this.showView('puppies');
+            }
         } else if (viewName === 'logs') {
             if (this.currentPuppyId) {
                 this.renderLogsView();
@@ -301,14 +311,42 @@ class PREPTrackerApp {
 
     async loadAllProfiles() {
         try {
-            this.allProfiles = await window.storage.getAllProfiles();
-            
-            // Get current puppy from localStorage or use first available
-            const savedPuppyId = localStorage.getItem('currentPuppyId');
-            if (savedPuppyId && this.allProfiles.find(p => p.id === savedPuppyId)) {
-                await this.selectPuppy(savedPuppyId);
-            } else if (this.allProfiles.length > 0) {
-                await this.selectPuppy(this.allProfiles[0].id);
+            if (window.testData) {
+                console.log("Using test data:", window.testData);
+                console.log("Test data profiles:", window.testData.profiles);
+                this.allProfiles = window.testData.profiles;
+                this.currentPuppyId = window.testData.currentProfileId;
+
+                // Populate storage with test data if it's not already there
+                for (const profile of window.testData.profiles) {
+                    await window.storage.saveProfile(profile, profile.id);
+                }
+                for (const key in window.testData.progress) {
+                    const [pId, area, age] = key.split('_');
+                    await window.storage.saveProgress(area, age, { value: window.testData.progress[key] }, pId);
+                }
+                for (const puppyId in window.testData.trainingLogs) {
+                    for (const log of window.testData.trainingLogs[puppyId]) {
+                        await window.storage.saveActivity(log, puppyId);
+                    }
+                }
+
+                if (this.currentPuppyId) {
+                    await this.selectPuppy(this.currentPuppyId);
+                } else if (this.allProfiles.length > 0) {
+                    await this.selectPuppy(this.allProfiles[0].id);
+                }
+
+            } else {
+                this.allProfiles = await window.storage.getAllProfiles();
+                
+                // Get current puppy from localStorage or use first available
+                const savedPuppyId = localStorage.getItem('currentPuppyId');
+                if (savedPuppyId && this.allProfiles.find(p => p.id === savedPuppyId)) {
+                    await this.selectPuppy(savedPuppyId);
+                } else if (this.allProfiles.length > 0) {
+                    await this.selectPuppy(this.allProfiles[0].id);
+                }
             }
         } catch (error) {
             console.error('Failed to load profiles:', error);
@@ -335,6 +373,7 @@ class PREPTrackerApp {
     }
 
     renderPuppyManagement() {
+        console.log("renderPuppyManagement method called.");
         this.updateCurrentPuppyDisplay();
         this.updatePuppyList();
     }
@@ -345,11 +384,13 @@ class PREPTrackerApp {
         
         if (this.puppyProfile) {
             const age = window.storage.calculateAge(this.puppyProfile.dateOfBirth);
+            const formattedDateOfBirth = this.formatDateOfBirth(this.puppyProfile.dateOfBirth);
             currentPuppyDisplay.innerHTML = `
                 <div class="current-puppy-card">
                     <div class="current-puppy-info">
                         <h4>${this.puppyProfile.puppyName}</h4>
                         <p><strong>Age:</strong> ${age.text}</p>
+                        <p><strong>Date of Birth:</strong> ${formattedDateOfBirth}</p>
                         <p><strong>Breed:</strong> ${this.puppyProfile.breed || 'Not specified'}</p>
                         <p><strong>Computer Number:</strong> ${this.puppyProfile.computerNumber || 'Not specified'}</p>
                     </div>
@@ -380,6 +421,7 @@ class PREPTrackerApp {
         puppyList.innerHTML = '';
         this.allProfiles.forEach(profile => {
             const age = window.storage.calculateAge(profile.dateOfBirth);
+            const formattedDateOfBirth = this.formatDateOfBirth(profile.dateOfBirth);
             const isSelected = profile.id === this.currentPuppyId;
             
             const puppyCard = document.createElement('div');
@@ -389,6 +431,7 @@ class PREPTrackerApp {
                     <div class="puppy-card-info">
                         <h4>${profile.puppyName}</h4>
                         <p><strong>Age:</strong> ${age.text}</p>
+                        <p><strong>Date of Birth:</strong> ${formattedDateOfBirth}</p>
                         <p><strong>Breed:</strong> ${profile.breed || 'Not specified'}</p>
                         <p><strong>Computer Number:</strong> ${profile.computerNumber || 'Not specified'}</p>
                     </div>
@@ -440,6 +483,9 @@ class PREPTrackerApp {
         if (!confirmed) return;
 
         try {
+            // Delete associated videos from IndexedDB
+            await this.deleteAllVideosForPuppy(puppyId);
+            
             // Delete the puppy profile
             await window.storage.deleteProfile(puppyId);
 
@@ -1157,6 +1203,188 @@ class PREPTrackerApp {
         }
     }
 
+    async renderDashboard() {
+        const dashboardGrid = document.querySelector('.dashboard-grid');
+        const puppySelectorBar = document.querySelector('.puppy-selector-bar');
+        
+        if (!dashboardGrid || !puppySelectorBar) return;
+        
+        // Clear existing content
+        dashboardGrid.innerHTML = '';
+        
+        // Get current puppy's age info
+        const ageInfo = window.storage.calculateAge(this.puppyProfile.dateOfBirth);
+        const currentMilestone = ageInfo.key;
+        
+        // Calculate puppy's age progress through current milestone
+        const milestoneProgress = this.calculateMilestoneProgress(this.puppyProfile.dateOfBirth);
+        
+        // Generate progress rings for the 10 behaviors in the current milestone
+        for (const area of this.trainingAreas) {
+            const progress = await window.storage.getProgress(area.id, currentMilestone, this.currentPuppyId);
+            const progressValue = progress?.value || 0;
+            
+            // Calculate progress comment based on the requirements
+            const comment = this.calculateProgressComment(progressValue, milestoneProgress);
+            
+            const ringCard = this.createProgressRingCard(area, progressValue, currentMilestone, comment);
+            dashboardGrid.appendChild(ringCard);
+        }
+        
+        // Render puppy selector bar
+        await this.renderPuppySelectorBar();
+    }
+    
+    calculateMilestoneProgress(dateOfBirth) {
+        const today = new Date();
+        const birth = new Date(dateOfBirth);
+        const daysSinceBirth = Math.floor((today - birth) / (1000 * 60 * 60 * 24));
+        
+        // Define milestone age ranges in days
+        const milestones = {
+            '12weeks': { start: 0, end: 112 }, // 0-16 weeks
+            'juvenile': { start: 112, end: 168 }, // 16-24 weeks  
+            'adolescent': { start: 168, end: 280 }, // 24-40 weeks
+            '12months': { start: 280, end: 365 } // 40-52+ weeks
+        };
+        
+        // Find current milestone
+        let currentMilestone = '12months';
+        for (const [key, range] of Object.entries(milestones)) {
+            if (daysSinceBirth >= range.start && daysSinceBirth < range.end) {
+                currentMilestone = key;
+                break;
+            }
+        }
+        
+        const range = milestones[currentMilestone];
+        const progressThroughMilestone = ((daysSinceBirth - range.start) / (range.end - range.start)) * 100;
+        
+        return Math.max(0, Math.min(100, progressThroughMilestone));
+    }
+    
+    calculateProgressComment(behaviorProgress, milestoneProgress) {
+        const difference = behaviorProgress - milestoneProgress;
+        
+        if (Math.abs(difference) <= 5) {
+            return { text: 'On Track', class: 'on-track' };
+        } else if (difference > 5) {
+            return { text: 'Well ahead!', class: 'well-ahead' };
+        } else {
+            return { text: 'Review progress', class: 'review-progress' };
+        }
+    }
+    
+    createProgressRingCard(area, progressValue, milestone, comment) {
+        const card = document.createElement('div');
+        card.className = 'progress-ring-card';
+        
+        const circumference = 2 * Math.PI * 46; // radius = 46
+        const strokeDasharray = circumference;
+        const strokeDashoffset = circumference - (progressValue / 100) * circumference;
+        
+        card.innerHTML = `
+            <div class="behavior-info">
+                <span class="behavior-icon">${area.icon}</span>
+                <div class="behavior-name">${area.name}</div>
+                <div class="behavior-milestone">${this.getMilestoneLabel(milestone)}</div>
+            </div>
+            
+            <div class="progress-ring-container">
+                <svg class="progress-ring" viewBox="0 0 120 120">
+                    <circle class="progress-ring-bg" cx="60" cy="60" r="46"></circle>
+                    <circle class="progress-ring-fill ${area.class}" 
+                            cx="60" cy="60" r="46"
+                            stroke-dasharray="${strokeDasharray}"
+                            stroke-dashoffset="${strokeDashoffset}"></circle>
+                </svg>
+                <div class="progress-ring-text">${progressValue}%</div>
+            </div>
+            
+            <div class="progress-comment ${comment.class}">${comment.text}</div>
+            
+            <div class="view-progress-bar" onclick="app.viewProgressFromDashboard('${area.id}', '${milestone}')">
+                📊 View Progress
+            </div>
+        `;
+        
+        return card;
+    }
+    
+    viewProgressFromDashboard(areaId, milestone) {
+        // Switch to progress view and scroll to the specific area
+        this.showView('progress');
+        
+        // Set the age to the milestone and wait for the view to render
+        setTimeout(() => {
+            this.selectAge(milestone);
+            
+            // Scroll to the specific training area
+            setTimeout(() => {
+                const targetArea = document.querySelector(`[data-area="${areaId}"]`);
+                if (targetArea) {
+                    const trainingArea = targetArea.closest('.training-area');
+                    if (trainingArea) {
+                        trainingArea.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'center' 
+                        });
+                        
+                        // Highlight the area briefly
+                        trainingArea.style.transform = 'scale(1.02)';
+                        trainingArea.style.boxShadow = 'var(--shadow-xl)';
+                        trainingArea.style.borderColor = 'var(--primary-blue)';
+                        
+                        setTimeout(() => {
+                            trainingArea.style.transform = '';
+                            trainingArea.style.boxShadow = '';
+                            trainingArea.style.borderColor = '';
+                        }, 2000);
+                    }
+                }
+            }, 500);
+        }, 100);
+    }
+    
+    getMilestoneLabel(milestone) {
+        const labels = {
+            '12weeks': '3 Months (12 Weeks)',
+            'juvenile': '6 Months (Juvenile)',
+            'adolescent': '9 Months (Adolescent)',
+            '12months': '12+ Months'
+        };
+        return labels[milestone] || milestone;
+    }
+    
+    async renderPuppySelectorBar() {
+        const puppySelectorBar = document.querySelector('.puppy-selector-bar');
+        if (!puppySelectorBar) return;
+        
+        puppySelectorBar.innerHTML = `
+            <h3>Switch Puppy</h3>
+            <div class="puppy-bars">
+                ${this.allProfiles.map(profile => {
+                    const age = window.storage.calculateAge(profile.dateOfBirth);
+                    const isActive = profile.id === this.currentPuppyId;
+                    return `
+                        <div class="puppy-bar ${isActive ? 'active' : ''}" 
+                             onclick="app.selectPuppyFromDashboard('${profile.id}')">
+                            <div class="puppy-bar-name">${profile.puppyName}</div>
+                            <div class="puppy-bar-age">${age.text}</div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+    
+    async selectPuppyFromDashboard(puppyId) {
+        if (puppyId !== this.currentPuppyId) {
+            await this.selectPuppy(puppyId);
+            await this.renderDashboard();
+        }
+    }
+
     async renderSupportingDocuments() {
         const grid = document.querySelector('.documents-grid');
         if (!grid) return;
@@ -1404,6 +1632,23 @@ class PREPTrackerApp {
                 }
             }, 300);
         }, 3000);
+    }
+
+    formatDateOfBirth(dateString) {
+        if (!dateString) return 'Not specified';
+        
+        try {
+            const date = new Date(dateString);
+            const options = { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            return date.toLocaleDateString('en-US', options);
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return dateString; // Return original string if formatting fails
+        }
     }
     
     async loadTrainingActivities(areaId, ageRange) {
@@ -1912,6 +2157,9 @@ class PREPTrackerApp {
                             <span class="video-icon">📹</span>
                             <span class="video-name">${log.video.name}</span>
                             <span class="video-size">(${Math.round(log.video.size / 1024 / 1024 * 100) / 100} MB)</span>
+                            <button class="video-play-btn" onclick="app.playVideo('${log.video.reference}', '${log.video.name}')" title="Play video">
+                                ▶️ Play Video
+                            </button>
                         </div>
                     ` : ''}
                 </div>
@@ -2066,8 +2314,176 @@ class PREPTrackerApp {
         if (activeFiltersDiv) activeFiltersDiv.remove();
     }
     
-    showNewLogModal(prefill = {}) {
+    // Global voice recognition instance
+    initVoiceRecognition() {
+        // Don't reinitialize if already exists
+        if (this.voiceRecognition) {
+            return;
+        }
+        
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            try {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                this.voiceRecognition = new SpeechRecognition();
+                
+                this.voiceRecognition.continuous = false;
+                this.voiceRecognition.interimResults = false;
+                this.voiceRecognition.lang = 'en-US';
+                this.voiceRecognition.maxAlternatives = 1;
+                
+                this.voiceRecognition.onstart = () => {
+                    console.log('Voice recognition started');
+                    this.isRecognizing = true;
+                    this.updateVoiceButtonState('listening');
+                };
+                
+                this.voiceRecognition.onresult = (event) => {
+                    console.log('Voice recognition result:', event.results);
+                    if (event.results && event.results[0] && event.results[0][0]) {
+                        const transcript = event.results[0][0].transcript;
+                        console.log('Transcript:', transcript);
+                        this.insertVoiceText(transcript);
+                    }
+                };
+                
+                this.voiceRecognition.onerror = (event) => {
+                    console.error('Voice recognition error:', event.error);
+                    this.isRecognizing = false;
+                    this.updateVoiceButtonState('idle');
+                    
+                    let errorMessage = 'Voice recognition error';
+                    switch(event.error) {
+                        case 'not-allowed':
+                            errorMessage = 'Microphone access denied. Please allow microphone access in browser settings.';
+                            break;
+                        case 'no-speech':
+                            errorMessage = 'No speech detected. Please try again.';
+                            break;
+                        case 'audio-capture':
+                            errorMessage = 'No microphone found or audio capture failed.';
+                            break;
+                        case 'network':
+                            errorMessage = 'Network error occurred during voice recognition.';
+                            break;
+                        default:
+                            errorMessage = `Voice recognition error: ${event.error}`;
+                    }
+                    this.showToast(errorMessage, 'error');
+                };
+                
+                this.voiceRecognition.onend = () => {
+                    console.log('Voice recognition ended');
+                    this.isRecognizing = false;
+                    this.updateVoiceButtonState('idle');
+                };
+                
+                console.log('Voice recognition initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize voice recognition:', error);
+                this.voiceRecognition = null;
+            }
+        } else {
+            console.log('Voice recognition not supported in this browser');
+        }
+    }
+    
+    // Update voice button state
+    updateVoiceButtonState(state) {
+        const voiceBtn = document.getElementById('voiceInputBtn');
+        const voiceStatus = document.getElementById('voiceStatus');
+        
+        if (!voiceBtn || !voiceStatus) return;
+        
+        voiceBtn.className = 'voice-input-btn';
+        voiceStatus.className = 'voice-status';
+        
+        switch(state) {
+            case 'listening':
+                voiceBtn.classList.add('listening');
+                voiceBtn.innerHTML = '⏹️';
+                voiceStatus.textContent = 'Listening...';
+                voiceStatus.classList.add('listening');
+                break;
+            case 'processing':
+                voiceBtn.classList.add('processing');
+                voiceBtn.innerHTML = '⏳';
+                voiceStatus.textContent = 'Processing...';
+                voiceStatus.classList.add('processing');
+                break;
+            default:
+                voiceBtn.innerHTML = '🎤';
+                voiceStatus.textContent = 'Click to record';
+        }
+    }
+    
+    // Insert voice text into Quill editor
+    insertVoiceText(text) {
+        if (this.logQuill || this.quill) {
+            this.updateVoiceButtonState('processing');
+            
+            setTimeout(() => {
+                const editor = this.logQuill || this.quill;
+                const currentContent = editor.getText();
+                const newText = currentContent.trim() ? ` ${text}` : text;
+                
+                editor.insertText(editor.getLength() - 1, newText);
+                this.updateVoiceButtonState('idle');
+            }, 500);
+        }
+    }
+    
+    // Toggle voice recording
+    toggleVoiceRecording() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            this.showToast('Voice recognition not supported in this browser', 'warning');
+            return;
+        }
+        
+        // Initialize if not already done
+        if (!this.voiceRecognition) {
+            this.initVoiceRecognition();
+        }
+        
+        if (!this.voiceRecognition) {
+            this.showToast('Failed to initialize voice recognition', 'error');
+            return;
+        }
+        
+        try {
+            if (this.isRecognizing) {
+                this.voiceRecognition.stop();
+                this.isRecognizing = false;
+                this.updateVoiceButtonState('idle');
+            } else {
+                this.voiceRecognition.start();
+            }
+        } catch (error) {
+            console.error('Voice recognition error:', error);
+            this.showToast('Voice recognition failed: ' + error.message, 'error');
+            this.isRecognizing = false;
+            this.updateVoiceButtonState('idle');
+        }
+    }
+
+    showNewLogModal(prefill = {}, editingLogId = null) {
         const modal = document.getElementById('newLogModal');
+        const title = document.getElementById('newLogTitle');
+        
+        // Set modal title based on whether we're editing or creating
+        title.textContent = editingLogId ? 'Edit Training Log Entry' : 'Add New Training Log Entry';
+        
+        // Scroll modal to top
+        modal.scrollTop = 0;
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) modalContent.scrollTop = 0;
+        
+        // Store editing state
+        this.editingLogId = editingLogId;
+        
+        // Destroy existing Quill instance if it exists
+        if (this.logQuill) {
+            this.logQuill = null;
+        }
         
         // Setup modal event listeners
         this.setupNewLogModalEventListeners();
@@ -2083,33 +2499,71 @@ class PREPTrackerApp {
         // Apply prefill parameters
         if (actualPrefill.behavior) document.getElementById('logEntryBehavior').value = actualPrefill.behavior;
         if (actualPrefill.milestone) document.getElementById('logEntryMilestone').value = actualPrefill.milestone;
+        if (actualPrefill.date) document.getElementById('logEntryDate').value = actualPrefill.date;
         
         // Clear pending prefill once consumed
         this.pendingLogPrefill = null;
         
-        // Initialize Quill editor
+        // Initialize Quill editor - clear container completely first
         const editorContainer = document.getElementById('logEntryNotesEditor');
         editorContainer.innerHTML = ''; // Clear any existing content
         
-        this.logQuill = new Quill(editorContainer, {
+        // Create a fresh div for Quill
+        const quillDiv = document.createElement('div');
+        editorContainer.appendChild(quillDiv);
+        
+        this.logQuill = new Quill(quillDiv, {
             theme: 'snow',
+            placeholder: 'Describe your training session...',
             modules: {
                 toolbar: [
-                    [{ 'header': [1, 2, false] }],
+                    [{ 'header': [1, 2, 3, false] }],
                     ['bold', 'italic', 'underline'],
-                    ['image', 'code-block'],
-                    ['link']
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['clean']
                 ]
             }
         });
         
+        // Initialize voice recognition
+        this.initVoiceRecognition();
+        
         // Reset video upload
+        this.currentVideoFile = null;
         document.getElementById('logEntryVideo').value = '';
         document.getElementById('logVideoPreview').style.display = 'none';
         document.getElementById('logVideoUploadBtn').textContent = '📹 Choose Video File';
         
+        // Apply video if editing and has video
+        if (actualPrefill.video) {
+            this.displayVideoPreview(actualPrefill.video, true);
+        }
+        
         modal.style.display = 'flex';
-        setTimeout(() => this.logQuill.focus(), 100);
+        
+        // Apply notes content and focus after Quill is fully initialized
+        // Use Quill's proper content setting method and ensure it's fully ready
+        const setContentWhenReady = () => {
+            if (this.logQuill && this.logQuill.root) {
+                try {
+                    if (actualPrefill.notes) {
+                        // Use Quill's setContents method with HTML content
+                        this.logQuill.clipboard.dangerouslyPasteHTML(actualPrefill.notes);
+                    }
+                    this.logQuill.focus();
+                } catch (error) {
+                    console.warn('Failed to set Quill content, retrying...', error);
+                    // If it fails, try again after a longer delay
+                    setTimeout(setContentWhenReady, 200);
+                }
+            } else {
+                // Quill not ready yet, try again
+                setTimeout(setContentWhenReady, 100);
+            }
+        };
+        
+        // Give Quill a moment to initialize, then set content
+        setTimeout(setContentWhenReady, 150);
     }
     
     setupNewLogModalEventListeners() {
@@ -2140,7 +2594,11 @@ class PREPTrackerApp {
         const removeVideoBtn = document.getElementById('removeLogVideoBtn');
         
         if (videoUploadBtn && !videoUploadBtn.hasAttribute('data-listener-added')) {
-            videoUploadBtn.addEventListener('click', () => videoInput.click());
+            videoUploadBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                videoInput.click();
+            });
             videoUploadBtn.setAttribute('data-listener-added', 'true');
         }
         
@@ -2150,8 +2608,23 @@ class PREPTrackerApp {
         }
         
         if (removeVideoBtn && !removeVideoBtn.hasAttribute('data-listener-added')) {
-            removeVideoBtn.addEventListener('click', () => this.removeLogVideo());
+            removeVideoBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.removeLogVideo();
+            });
             removeVideoBtn.setAttribute('data-listener-added', 'true');
+        }
+        
+        // Voice input button
+        const voiceInputBtn = document.getElementById('voiceInputBtn');
+        if (voiceInputBtn && !voiceInputBtn.hasAttribute('data-listener-added')) {
+            voiceInputBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleVoiceRecording();
+            });
+            voiceInputBtn.setAttribute('data-listener-added', 'true');
         }
         
         // Close modal on outside click
@@ -2169,6 +2642,8 @@ class PREPTrackerApp {
     handleLogVideoUpload(e) {
         const file = e.target.files[0];
         if (file) {
+            // Store the file reference for later use
+            this.currentVideoFile = file;
             document.getElementById('logVideoFileName').textContent = file.name;
             document.getElementById('logVideoPreview').style.display = 'block';
             document.getElementById('logVideoUploadBtn').textContent = '📹 Change Video File';
@@ -2176,9 +2651,18 @@ class PREPTrackerApp {
     }
     
     removeLogVideo() {
+        this.currentVideoFile = null;
         document.getElementById('logEntryVideo').value = '';
         document.getElementById('logVideoPreview').style.display = 'none';
         document.getElementById('logVideoUploadBtn').textContent = '📹 Choose Video File';
+    }
+    
+    displayVideoPreview(videoData, isExisting = false) {
+        if (videoData) {
+            document.getElementById('logVideoFileName').textContent = videoData.name;
+            document.getElementById('logVideoPreview').style.display = 'block';
+            document.getElementById('logVideoUploadBtn').textContent = '📹 Change Video File';
+        }
     }
     
     closeNewLogModal() {
@@ -2210,9 +2694,22 @@ class PREPTrackerApp {
             };
             
             // Handle video if uploaded
-            if (videoInput.files && videoInput.files[0]) {
-                const videoFile = videoInput.files[0];
+            if (this.currentVideoFile) {
+                const videoFile = this.currentVideoFile;
+                // Create a unique reference to this video file
+                const videoReference = `video_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                
+                // Store the file persistently in IndexedDB
+                try {
+                    await this.storeVideoFile(videoReference, videoFile, this.currentPuppyId);
+                    console.log('Video stored persistently:', videoReference);
+                } catch (error) {
+                    console.error('Failed to store video persistently:', error);
+                    this.showToast('Failed to store video file', 'warning');
+                }
+                
                 logData.video = {
+                    reference: videoReference,
                     name: videoFile.name,
                     size: videoFile.size,
                     type: videoFile.type,
@@ -2220,10 +2717,20 @@ class PREPTrackerApp {
                 };
             }
             
-            await window.storage.saveLogEntry(logData, this.currentPuppyId);
+            if (this.editingLogId) {
+                // Update existing log entry
+                await window.storage.updateLogEntry(this.editingLogId, logData, this.currentPuppyId);
+                this.showToast('Training log entry updated successfully', 'success');
+            } else {
+                // Create new log entry
+                await window.storage.saveLogEntry(logData, this.currentPuppyId);
+                this.showToast('Training log entry saved successfully', 'success');
+            }
+            
+            // Clear editing state
+            this.editingLogId = null;
             
             this.closeNewLogModal();
-            this.showToast('Training log entry saved successfully', 'success');
             
             // Refresh the logs view
             await this.loadAndDisplayLogs();
@@ -2235,8 +2742,27 @@ class PREPTrackerApp {
     }
     
     async editLogEntry(logId) {
-        // For now, show a simple message - full edit functionality can be added later
-        this.showToast('Edit functionality coming soon', 'info');
+        try {
+            // Get the log entry from storage
+            const logEntry = await window.storage.getLogEntry(logId, this.currentPuppyId);
+            if (!logEntry) {
+                this.showToast('Log entry not found', 'error');
+                return;
+            }
+            
+            // Open the modal with existing data pre-filled
+            this.showNewLogModal({
+                behavior: logEntry.trainingArea,
+                milestone: logEntry.ageRange,
+                date: logEntry.date,
+                notes: logEntry.notes,
+                video: logEntry.video
+            }, logId);
+            
+        } catch (error) {
+            console.error('Failed to load log entry for editing:', error);
+            this.showToast('Failed to load log entry for editing', 'error');
+        }
     }
     
     async deleteLogEntry(logId) {
@@ -2271,6 +2797,297 @@ class PREPTrackerApp {
         const versionElement = document.getElementById('appVersion');
         if (versionElement) {
             versionElement.textContent = `v${this.APP_VERSION}`;
+        }
+    }
+
+    // Initialize persistent video storage using IndexedDB
+    async initVideoStorage() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('PrepTrackerVideos', 1);
+            
+            request.onerror = () => {
+                console.error('Failed to open video database:', request.error);
+                reject(request.error);
+            };
+            
+            request.onsuccess = () => {
+                this.videoDB = request.result;
+                console.log('Video database initialized successfully');
+                resolve();
+            };
+            
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('videos')) {
+                    const videoStore = db.createObjectStore('videos', { keyPath: 'reference' });
+                    videoStore.createIndex('puppyId', 'puppyId', { unique: false });
+                    videoStore.createIndex('timestamp', 'timestamp', { unique: false });
+                    console.log('Video object store created');
+                }
+            };
+        });
+    }
+
+    // Store video file persistently
+    async storeVideoFile(videoReference, videoFile, puppyId) {
+        return new Promise((resolve, reject) => {
+            if (!this.videoDB) {
+                reject(new Error('Video database not initialized'));
+                return;
+            }
+
+            const transaction = this.videoDB.transaction(['videos'], 'readwrite');
+            const store = transaction.objectStore('videos');
+            
+            const videoData = {
+                reference: videoReference,
+                file: videoFile,
+                puppyId: puppyId,
+                timestamp: Date.now(),
+                name: videoFile.name,
+                size: videoFile.size,
+                type: videoFile.type,
+                lastModified: videoFile.lastModified
+            };
+            
+            const request = store.put(videoData);
+            
+            request.onsuccess = () => {
+                console.log('Video stored successfully:', videoReference);
+                resolve();
+            };
+            
+            request.onerror = () => {
+                console.error('Failed to store video:', request.error);
+                reject(request.error);
+            };
+        });
+    }
+
+    // Retrieve video file by reference
+    async getVideoFile(videoReference) {
+        return new Promise((resolve, reject) => {
+            if (!this.videoDB) {
+                reject(new Error('Video database not initialized'));
+                return;
+            }
+
+            const transaction = this.videoDB.transaction(['videos'], 'readonly');
+            const store = transaction.objectStore('videos');
+            const request = store.get(videoReference);
+            
+            request.onsuccess = () => {
+                if (request.result) {
+                    resolve(request.result.file);
+                } else {
+                    reject(new Error('Video not found'));
+                }
+            };
+            
+            request.onerror = () => {
+                console.error('Failed to retrieve video:', request.error);
+                reject(request.error);
+            };
+        });
+    }
+
+    // Delete video file by reference
+    async deleteVideoFile(videoReference) {
+        return new Promise((resolve, reject) => {
+            if (!this.videoDB) {
+                reject(new Error('Video database not initialized'));
+                return;
+            }
+
+            const transaction = this.videoDB.transaction(['videos'], 'readwrite');
+            const store = transaction.objectStore('videos');
+            const request = store.delete(videoReference);
+            
+            request.onsuccess = () => {
+                console.log('Video deleted successfully:', videoReference);
+                resolve();
+            };
+            
+            request.onerror = () => {
+                console.error('Failed to delete video:', request.error);
+                reject(request.error);
+            };
+        });
+    }
+
+    // Get all videos for a specific puppy
+    async getVideosForPuppy(puppyId) {
+        return new Promise((resolve, reject) => {
+            if (!this.videoDB) {
+                reject(new Error('Video database not initialized'));
+                return;
+            }
+
+            const transaction = this.videoDB.transaction(['videos'], 'readonly');
+            const store = transaction.objectStore('videos');
+            const index = store.index('puppyId');
+            const request = index.getAll(puppyId);
+            
+            request.onsuccess = () => {
+                resolve(request.result);
+            };
+            
+            request.onerror = () => {
+                console.error('Failed to get videos for puppy:', request.error);
+                reject(request.error);
+            };
+        });
+    }
+
+    // Delete all videos for a specific puppy
+    async deleteAllVideosForPuppy(puppyId) {
+        try {
+            const videos = await this.getVideosForPuppy(puppyId);
+            const deletePromises = videos.map(video => this.deleteVideoFile(video.reference));
+            await Promise.all(deletePromises);
+            console.log(`Deleted ${videos.length} videos for puppy ${puppyId}`);
+        } catch (error) {
+            console.error('Failed to delete videos for puppy:', error);
+        }
+    }
+
+    // Play video from stored file reference
+    async playVideo(videoReference, fileName) {
+        try {
+            const videoFile = await this.getVideoFile(videoReference);
+            const videoURL = URL.createObjectURL(videoFile);
+
+        // Create video modal
+        const modal = document.createElement('div');
+        modal.className = 'video-modal';
+        modal.innerHTML = `
+            <div class="video-modal-content">
+                <div class="video-modal-header">
+                    <h3>${fileName}</h3>
+                    <button class="close-video-btn">&times;</button>
+                </div>
+                <div class="video-container">
+                    <video controls autoplay preload="metadata">
+                        <source src="${videoURL}" type="${videoFile.type}">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
+        `;
+
+        // Add modal styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .video-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.9);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: fadeIn 0.3s ease;
+            }
+            .video-modal-content {
+                background: white;
+                border-radius: 8px;
+                max-width: 90vw;
+                max-height: 90vh;
+                overflow: hidden;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            }
+            .video-modal-header {
+                padding: 1rem;
+                background: var(--primary-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+                color: white;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .video-modal-header h3 {
+                margin: 0;
+                font-size: 1.1rem;
+                max-width: 80%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .close-video-btn {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 1.5rem;
+                cursor: pointer;
+                padding: 0;
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: background-color 0.2s;
+            }
+            .close-video-btn:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+            }
+            .video-container {
+                padding: 0;
+            }
+            .video-container video {
+                width: 100%;
+                height: auto;
+                max-height: 70vh;
+                display: block;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add event listeners
+        const closeBtn = modal.querySelector('.close-video-btn');
+        const video = modal.querySelector('video');
+
+        const closeModal = () => {
+            video.pause();
+            URL.revokeObjectURL(videoURL);
+            modal.remove();
+            style.remove();
+        };
+
+        closeBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Handle escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+
+            // Show modal
+            document.body.appendChild(modal);
+
+            // Clean up URL when video ends
+            video.addEventListener('ended', () => {
+                setTimeout(() => {
+                    URL.revokeObjectURL(videoURL);
+                }, 1000);
+            });
+        } catch (error) {
+            console.error('Failed to load video:', error);
+            this.showToast('Video file not found or failed to load', 'error');
         }
     }
 
