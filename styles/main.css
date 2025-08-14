@@ -259,22 +259,47 @@ body {
     border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
+.progress-comment-text {
+    margin-top: var(--spacing-md);
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.progress-comment-text.on-track {
+    color: #059669;
+}
+
+.progress-comment-text.review-progress {
+    color: #DC2626;
+}
+
+.progress-comment-text.well-ahead {
+    color: #2563EB;
+}
+
 .view-progress-bar {
-    background: linear-gradient(135deg, var(--primary-blue), var(--secondary-purple));
+    background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
     color: white;
-    padding: 8px 12px;
-    border-radius: 4px;
+    padding: var(--spacing-md);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     text-align: center;
     cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
-    margin-top: var(--spacing-md);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: var(--spacing-md) calc(-1 * var(--spacing-xl)) calc(-1 * var(--spacing-xl)) calc(-1 * var(--spacing-xl));
     transition: all 0.2s ease;
     user-select: none;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: var(--shadow-sm);
 }
 
 .view-progress-bar:hover {
-    background: linear-gradient(135deg, var(--secondary-purple), var(--primary-blue));
+    background: linear-gradient(135deg, var(--accent-purple), var(--primary-blue));
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
@@ -1555,50 +1580,37 @@ body {
     }
 }
 
-/* Training Actions */
-.training-actions {
+/* Notes Bar */
+.notes-bar {
     margin-top: var(--spacing-lg);
-    display: flex;
-    gap: var(--spacing-sm);
-    justify-content: flex-start;
-}
-
-.action-btn {
-    flex: none;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border: 2px solid transparent;
+    background: var(--success-gradient);
+    color: var(--text-white);
+    border: none;
+    padding: var(--spacing-md);
     border-radius: var(--radius-md);
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     cursor: pointer;
     transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-xs);
-    min-height: auto;
+    gap: var(--spacing-sm);
+    width: 100%;
+    min-height: 48px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
 }
 
-.log-btn {
-    background: var(--success-gradient);
-    color: var(--text-white);
-    border-color: var(--accent-green);
-}
-
-.log-btn:hover {
+.notes-bar:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md);
+    background: linear-gradient(135deg, #059669 0%, #10B981 100%);
 }
 
-.training-btn {
-    background: var(--primary-gradient);
-    color: var(--text-white);
-    border-color: var(--primary-blue-dark);
-}
-
-.training-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
+.notes-bar:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
 }
 
 /* Training Activities Modal */

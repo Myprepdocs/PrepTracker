@@ -663,13 +663,8 @@ class PREPTrackerApp {
                                 <span>100%</span>
                             </div>
                         </div>
-                        <div class="training-actions">
-                            <button class="action-btn log-btn" data-area="${area.id}" data-age="${this.currentAge}">
-                                📝 Log
-                            </button>
-                            <button class="action-btn training-btn" data-area="${area.id}" data-age="${this.currentAge}">
-                                🎯 Training
-                            </button>
+                        <div class="notes-bar" data-area="${area.id}" data-age="${this.currentAge}">
+                            📝 Notes
                         </div>
                     </div>
                     <div class="progress-accordion" data-area="${area.id}" data-age="${this.currentAge}" style="display: none;">
@@ -759,18 +754,11 @@ class PREPTrackerApp {
             this.handleProgressChange(e, area);
         });
 
-        // Progress Log button - redirect to central logging system
-        const logBtn = element.querySelector('.log-btn');
-        logBtn.addEventListener('click', (e) => {
+        // Notes bar - redirect to central logging system
+        const notesBar = element.querySelector('.notes-bar');
+        notesBar.addEventListener('click', (e) => {
             e.stopPropagation();
             this.redirectToLogsWithFilter(area.id, this.currentAge);
-        });
-        
-        // Training Activities button
-        const trainingBtn = element.querySelector('.training-btn');
-        trainingBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.handleTrainingActivitiesClick(area, this.currentAge);
         });
 
         // E-learning button
@@ -1011,16 +999,6 @@ class PREPTrackerApp {
         }
     }
 
-    async handleTrainingActivitiesClick(area, ageRange) {
-        try {
-            // Show training activities for this area
-            const activities = await this.loadTrainingActivities(area.id, ageRange);
-            this.showTrainingActivitiesModal(area, ageRange, activities);
-        } catch (error) {
-            console.error('Failed to load training activities:', error);
-            this.showToast('Failed to load training activities', 'error');
-        }
-    }
     
     showProgressLogModal(area, ageRange, activities) {
         const modal = document.getElementById('activityModal');
@@ -1310,10 +1288,10 @@ class PREPTrackerApp {
                 <div class="progress-ring-text">${progressValue}%</div>
             </div>
             
-            <div class="progress-comment ${comment.class}">${comment.text}</div>
+            <div class="progress-comment-text ${comment.class}">${comment.text}</div>
             
             <div class="view-progress-bar" onclick="app.viewProgressFromDashboard('${area.id}', '${milestone}')">
-                📊 View Progress
+                📊 Track Progress
             </div>
         `;
         
@@ -1671,137 +1649,9 @@ class PREPTrackerApp {
         }
     }
     
-    async loadTrainingActivities(areaId, ageRange) {
-        // Load initial training activities from JSON file
-        try {
-            const response = await fetch('./data/initial-training-activities.json');
-            const data = await response.json();
-            
-            // Filter activities for this area and age range
-            const areaActivities = data.trainingActivities[areaId] || [];
-            return areaActivities.filter(activity => 
-                activity.ageRange === ageRange || 
-                activity.ageRange === 'all' ||
-                this.isAgeRangeCompatible(activity.ageRange, ageRange)
-            );
-        } catch (error) {
-            console.error('Failed to load training activities:', error);
-            return [];
-        }
-    }
     
-    isAgeRangeCompatible(activityAge, currentAge) {
-        const ageOrder = ['12weeks', 'juvenile', 'adolescent', '12months'];
-        const activityIndex = ageOrder.indexOf(activityAge);
-        const currentIndex = ageOrder.indexOf(currentAge);
-        
-        // Show activities from current age and earlier
-        return activityIndex <= currentIndex;
-    }
     
-    showTrainingActivitiesModal(area, ageRange, activities) {
-        const modal = document.getElementById('activityModal');
-        const title = document.getElementById('modalTitle');
-        const modalBody = document.querySelector('.modal-body');
-        const modalFooter = document.querySelector('.modal-footer');
-        
-        title.textContent = `${area.name} - Training Activities`;
-        
-        modalBody.innerHTML = `
-            <div class="training-activities">
-                <h4>Structured Training Activities</h4>
-                ${activities.length > 0 ? `
-                    <div class="activities-list">
-                        ${activities.map(activity => `
-                            <div class="training-activity-card">
-                                <div class="activity-header">
-                                    <h5>${activity.title}</h5>
-                                    <span class="activity-age">${activity.ageRange}</span>
-                                </div>
-                                <div class="activity-description">${activity.description}</div>
-                                <div class="activity-category">${activity.category}</div>
-                                <div class="activity-instructions">
-                                    <h6>Instructions:</h6>
-                                    <ul>
-                                        ${activity.instructions.map(instruction => 
-                                            `<li>${instruction}</li>`
-                                        ).join('')}
-                                    </ul>
-                                </div>
-                                ${activity.goals ? `
-                                    <div class="activity-goals">
-                                        <h6>Goals:</h6>
-                                        <ul>
-                                            ${activity.goals.map(goal => `<li>${goal}</li>`).join('')}
-                                        </ul>
-                                    </div>
-                                ` : ''}
-                                ${activity.safety ? `
-                                    <div class="activity-safety">
-                                        <strong>⚠️ Safety:</strong> ${activity.safety}
-                                    </div>
-                                ` : ''}
-                                <button class="use-activity-btn" data-activity-id="${activity.id}">
-                                    Use This Activity
-                                </button>
-                            </div>
-                        `).join('')}
-                    </div>
-                ` : `
-                    <div class="no-activities">
-                        <p>No structured training activities available for this age range yet.</p>
-                        <p>Check back as your puppy develops, or add your own activities.</p>
-                    </div>
-                `}
-                <div class="add-custom-activity">
-                    <button id="addCustomActivityBtn" class="primary-btn">
-                        ➕ Add Custom Training Activity
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        // Setup event listeners
-        const useActivityBtns = modalBody.querySelectorAll('.use-activity-btn');
-        useActivityBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const activityId = e.target.dataset.activityId;
-                const activity = activities.find(a => a.id === activityId);
-                this.useTrainingActivity(area, ageRange, activity);
-            });
-        });
-        
-        const addCustomBtn = document.getElementById('addCustomActivityBtn');
-        addCustomBtn.addEventListener('click', () => {
-            this.openActivityModal(area, ageRange, 'training-activities');
-        });
-        
-        // Setup footer
-        modalFooter.innerHTML = `
-            <button id="closeTrainingActivities" class="secondary-btn">Close</button>
-        `;
-        modalFooter.style.display = 'flex';
-        
-        document.getElementById('closeTrainingActivities').addEventListener('click', () => {
-            this.closeModal();
-        });
-        
-        modal.style.display = 'flex';
-    }
     
-    useTrainingActivity(area, ageRange, activity) {
-        // Pre-populate activity modal with training activity details
-        this.openActivityModal(area, ageRange, 'training-activities');
-        
-        // Pre-fill with activity information
-        setTimeout(() => {
-            const notesInput = document.getElementById('activityNotes');
-            if (notesInput) {
-                const activityText = `${activity.title}\n\n${activity.description}\n\nInstructions:\n${activity.instructions.map(i => `• ${i}`).join('\n')}${activity.goals ? `\n\nGoals:\n${activity.goals.map(g => `• ${g}`).join('\n')}` : ''}`;
-                notesInput.value = activityText;
-            }
-        }, 100);
-    }
 
     async debugActivities() {
         try {
