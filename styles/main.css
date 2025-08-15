@@ -163,6 +163,7 @@ body {
     background: var(--bg-primary);
     border-radius: var(--radius-lg);
     padding: var(--spacing-xl);
+    padding-bottom: 60px; /* Space for the Track Progress bar */
     box-shadow: var(--shadow-md);
     text-align: center;
     transition: transform var(--transition-fast);
@@ -296,6 +297,12 @@ body {
     justify-content: center;
     gap: 6px;
     box-shadow: var(--shadow-sm);
+    /* Position at the very bottom of the card */
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
 }
 
 .view-progress-bar:hover {
@@ -741,6 +748,7 @@ body {
 
 .training-content {
     padding: var(--spacing-lg);
+    position: relative;
 }
 
 /* Area Age Selector (Radio Buttons) */
@@ -1582,24 +1590,21 @@ body {
 
 /* Notes Bar */
 .notes-bar {
-    margin-top: var(--spacing-lg);
     background: var(--success-gradient);
     color: var(--text-white);
     border: none;
-    padding: var(--spacing-md);
-    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-lg);
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all var(--transition-fast);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: var(--spacing-sm);
-    width: 100%;
-    min-height: 48px;
-    text-align: center;
-    box-shadow: var(--shadow-sm);
+    margin-top: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
 }
 
 .notes-bar:hover {

@@ -616,6 +616,26 @@ class PREPTrackerApp {
     async renderProgressGrid() {
         const grid = document.getElementById('progressGrid');
         grid.innerHTML = '';
+        
+        // Check if we should only show a specific behavior
+        const shouldShowOnlyTarget = this.targetBehaviorFromDashboard;
+        
+        // Reset the target behavior flag after using it
+        if (shouldShowOnlyTarget) {
+            // Add navigation buttons
+            const navButtons = document.createElement('div');
+            navButtons.className = 'progress-nav-buttons';
+            navButtons.style.cssText = 'display: flex; gap: var(--spacing-sm); margin-bottom: var(--spacing-lg); flex-wrap: wrap; align-items: center;';
+            navButtons.innerHTML = `
+                <button onclick="app.showAllBehaviors()" class="small-btn secondary-btn">
+                    Show All
+                </button>
+                <button onclick="app.showView('dashboard')" class="small-btn primary-btn">
+                    🎯 Dashboard
+                </button>
+            `;
+            grid.appendChild(navButtons);
+        }
 
         for (const area of this.trainingAreas) {
             const progress = await window.storage.getProgress(area.id, this.currentAge, this.currentPuppyId);
@@ -1270,11 +1290,15 @@ class PREPTrackerApp {
         const strokeDasharray = circumference;
         const strokeDashoffset = circumference - (progressValue / 100) * circumference;
         
+        // Calculate days remaining for this milestone
+        const daysRemaining = this.calculateDaysRemaining(milestone);
+        
         card.innerHTML = `
             <div class="behavior-info">
                 <span class="behavior-icon">${area.icon}</span>
                 <div class="behavior-name">${area.name}</div>
                 <div class="behavior-milestone">${this.getMilestoneLabel(milestone)}</div>
+                <div style="font-size: 0.8rem; color: #000; margin-top: 4px;">${daysRemaining} days</div>
             </div>
             
             <div class="progress-ring-container">
@@ -1299,6 +1323,9 @@ class PREPTrackerApp {
     }
     
     viewProgressFromDashboard(areaId, milestone) {
+        // Store the target area ID to show only that behavior
+        this.targetBehaviorFromDashboard = areaId;
+        
         // Switch to progress view and scroll to the specific area
         this.showView('progress');
         
@@ -1306,16 +1333,23 @@ class PREPTrackerApp {
         setTimeout(() => {
             this.selectAge(milestone);
             
-            // Scroll to the specific training area
+            // Hide all other behaviors and show only the target one
             setTimeout(() => {
+                // Hide all training areas first
+                document.querySelectorAll('.training-area').forEach(area => {
+                    area.style.display = 'none';
+                });
+                
+                // Find and show only the target behavior
                 const targetArea = document.querySelector(`[data-area="${areaId}"]`);
                 if (targetArea) {
                     const trainingArea = targetArea.closest('.training-area');
                     if (trainingArea) {
-                        // If on mobile, expand the training area first
-                        if (window.innerWidth <= 768) {
-                            trainingArea.classList.add('active');
-                        }
+                        // Show this behavior
+                        trainingArea.style.display = 'block';
+                        
+                        // Expand the training area (for all devices when coming from dashboard)
+                        trainingArea.classList.add('active');
                         
                         // Scroll into view after expanding
                         trainingArea.scrollIntoView({ 
@@ -1347,6 +1381,42 @@ class PREPTrackerApp {
             '12months': '12+ Months'
         };
         return labels[milestone] || milestone;
+    }
+    
+    calculateDaysRemaining(milestone) {
+        if (!this.puppyProfile || !this.puppyProfile.dateOfBirth) {
+            return 90; // Default to 90 days if no puppy profile
+        }
+        
+        const today = new Date();
+        const birth = new Date(this.puppyProfile.dateOfBirth);
+        const daysSinceBirth = Math.floor((today - birth) / (1000 * 60 * 60 * 24));
+        
+        // Define milestone age ranges in days (treating each as 90-day periods)
+        const milestones = {
+            '12weeks': { start: 0, end: 90 },       // 0-90 days
+            'juvenile': { start: 90, end: 180 },    // 90-180 days  
+            'adolescent': { start: 180, end: 270 }, // 180-270 days
+            '12months': { start: 270, end: 360 }    // 270-360 days
+        };
+        
+        const range = milestones[milestone];
+        if (!range) {
+            return 0; // Unknown milestone
+        }
+        
+        // If puppy is currently in this milestone, calculate remaining days
+        if (daysSinceBirth >= range.start && daysSinceBirth < range.end) {
+            return Math.max(0, range.end - daysSinceBirth);
+        }
+        
+        // If milestone is in the future, return 90 days
+        if (daysSinceBirth < range.start) {
+            return 90;
+        }
+        
+        // If milestone is in the past, return 0 days
+        return 0;
     }
     
     async renderPuppySelectorBar() {
@@ -1653,6 +1723,14 @@ class PREPTrackerApp {
             console.error('Error formatting date:', error);
             return dateString; // Return original string if formatting fails
         }
+    }
+    
+    showAllBehaviors() {
+        // Clear the target behavior flag
+        this.targetBehaviorFromDashboard = null;
+        
+        // Re-render the progress grid to show all behaviors
+        this.renderProgressGrid();
     }
     
     
