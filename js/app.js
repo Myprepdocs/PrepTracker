@@ -1258,7 +1258,7 @@ class PREPTrackerApp {
         } else if (difference > 5) {
             return { text: 'Well ahead!', class: 'well-ahead' };
         } else {
-            return { text: 'Review progress', class: 'review-progress' };
+            return { text: 'Review', class: 'review-progress' };
         }
     }
     

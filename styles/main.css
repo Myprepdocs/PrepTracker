@@ -290,7 +290,7 @@ body {
     margin: var(--spacing-md) calc(-1 * var(--spacing-xl)) calc(-1 * var(--spacing-xl)) calc(-1 * var(--spacing-xl));
     transition: all 0.2s ease;
     user-select: none;
-    min-height: 48px;
+    min-height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
