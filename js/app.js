@@ -1312,9 +1312,15 @@ class PREPTrackerApp {
                 if (targetArea) {
                     const trainingArea = targetArea.closest('.training-area');
                     if (trainingArea) {
+                        // If on mobile, expand the training area first
+                        if (window.innerWidth <= 768) {
+                            trainingArea.classList.add('active');
+                        }
+                        
+                        // Scroll into view after expanding
                         trainingArea.scrollIntoView({ 
                             behavior: 'smooth', 
-                            block: 'center' 
+                            block: 'start' 
                         });
                         
                         // Highlight the area briefly
