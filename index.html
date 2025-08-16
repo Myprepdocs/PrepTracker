@@ -193,49 +193,42 @@
                 <!-- Diary Page Container -->
                 <div class="diary-container">
                     
-                    <!-- Diary Header with Navigation -->
-                    <div class="diary-header">
-                        <button id="prevDayBtn" class="diary-nav-btn" title="Previous Day">
-                            &#8249;
-                        </button>
-                        
-                        <div class="diary-date-display">
-                            <h1 id="diaryDateHeader" class="diary-date">Today</h1>
-                            <div class="diary-date-line"></div>
-                        </div>
-                        
-                        <button id="nextDayBtn" class="diary-nav-btn" title="Next Day">
-                            &#8250;
-                        </button>
+                    <!-- Diary Date Header -->
+                    <div class="diary-date-header">
+                        <h1 id="diaryDateHeader" class="diary-date"></h1>
+                        <div class="diary-date-line"></div>
                     </div>
                     
                     <!-- Diary Controls -->
                     <div class="diary-controls">
-                        <div class="diary-filter">
-                            <select id="diaryBehaviorFilter" class="diary-filter-select">
-                                <option value="all">All Behaviours</option>
-                                <option value="toileting">Toileting Routine</option>
-                                <option value="play">Learning to Play</option>
-                                <option value="greeting">Greeting People</option>
-                                <option value="manners">Learning Manners</option>
-                                <option value="transport">Travel and Transport</option>
-                                <option value="walking">Walking on a Lead</option>
-                                <option value="recall">Recall and Off Lead Exercise</option>
-                                <option value="handling">Handling, Grooming and Equipment</option>
-                                <option value="outing">Being Out and About</option>
-                                <option value="social">Social Behaviours and Settling</option>
-                            </select>
+                        <div class="diary-filters">
+                            <div class="diary-filter">
+                                <select id="diaryBehaviorFilter" class="diary-filter-select">
+                                    <option value="all">All Behaviours</option>
+                                    <option value="toileting">Toileting Routine</option>
+                                    <option value="play">Learning to Play</option>
+                                    <option value="greeting">Greeting People</option>
+                                    <option value="manners">Learning Manners</option>
+                                    <option value="transport">Travel and Transport</option>
+                                    <option value="walking">Walking on a Lead</option>
+                                    <option value="recall">Recall and Off Lead Exercise</option>
+                                    <option value="handling">Handling, Grooming and Equipment</option>
+                                    <option value="outing">Being Out and About</option>
+                                    <option value="social">Social Behaviours and Settling</option>
+                                </select>
+                            </div>
+                            
+                            <div class="diary-filter">
+                                <input type="date" id="diaryDateFilter" class="diary-filter-input" placeholder="Filter by date">
+                            </div>
                         </div>
                         
-                        <div class="diary-filter">
-                            <input type="date" id="diaryDateFilter" class="diary-filter-input" placeholder="Filter by date">
+                        <div class="diary-actions">
+                            <button id="clearDiaryFilters" class="diary-btn secondary">Clear</button>
+                            <button id="addDiaryEntryBtn" class="diary-btn primary">
+                                ✍️ Add Entry
+                            </button>
                         </div>
-                        
-                        <button id="clearDiaryFilters" class="secondary-btn">Clear Filters</button>
-                        
-                        <button id="addDiaryEntryBtn" class="primary-btn">
-                            ✍️ Add Diary Entry
-                        </button>
                     </div>
                     
                     <!-- Diary Page Content -->
