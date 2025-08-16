@@ -2195,9 +2195,51 @@ class PREPTrackerApp {
     }
     
     updateDiaryStats(entries) {
-        // Update diary-specific stats if needed
-        // For now, we can use the same logic as logs
-        this.updateLogsStats(entries);
+        // Calculate stats from diary entries
+        const totalEntries = entries.length;
+        const behaviorCounts = {};
+        const milestoneCounts = {};
+        
+        entries.forEach(entry => {
+            behaviorCounts[entry.trainingArea] = (behaviorCounts[entry.trainingArea] || 0) + 1;
+            milestoneCounts[entry.ageRange] = (milestoneCounts[entry.ageRange] || 0) + 1;
+        });
+        
+        const mostActiveArea = Object.keys(behaviorCounts).reduce((a, b) => 
+            behaviorCounts[a] > behaviorCounts[b] ? a : b, Object.keys(behaviorCounts)[0] || 'none');
+        
+        // Create or update diary stats display
+        let statsDiv = document.querySelector('.diary-stats');
+        if (!statsDiv) {
+            statsDiv = document.createElement('div');
+            statsDiv.className = 'diary-stats';
+            const diaryEntries = document.getElementById('diaryEntries');
+            if (diaryEntries && diaryEntries.parentNode) {
+                diaryEntries.parentNode.insertBefore(statsDiv, diaryEntries);
+            }
+        }
+        
+        if (totalEntries > 0) {
+            const mostActiveAreaInfo = this.trainingAreas.find(area => area.id === mostActiveArea);
+            
+            statsDiv.innerHTML = `
+                <div class="diary-stat">
+                    <div class="diary-stat-value">${totalEntries}</div>
+                    <div class="diary-stat-label">Total Entries</div>
+                </div>
+                <div class="diary-stat">
+                    <div class="diary-stat-value">${Object.keys(behaviorCounts).length}</div>
+                    <div class="diary-stat-label">Areas Covered</div>
+                </div>
+                <div class="diary-stat">
+                    <div class="diary-stat-value">${mostActiveAreaInfo ? mostActiveAreaInfo.name : 'None'}</div>
+                    <div class="diary-stat-label">Most Active Area</div>
+                </div>
+            `;
+        } else {
+            // Hide stats when no entries
+            statsDiv.innerHTML = '';
+        }
     }
     
     applyDiaryFilters() {
