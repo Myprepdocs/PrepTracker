@@ -531,7 +531,23 @@ class StorageService {
         }
         
         if (filters.date) {
-            filtered = filtered.filter(entry => entry.date === filters.date);
+            // Handle date filtering more robustly
+            const filterDate = filters.date;
+            filtered = filtered.filter(entry => {
+                if (!entry.date) return false;
+                
+                // Extract just the date part from entry.date (could be full datetime or just date)
+                let entryDatePart;
+                if (entry.date.includes('T')) {
+                    // Full datetime format (ISO string)
+                    entryDatePart = entry.date.split('T')[0];
+                } else {
+                    // Just date format
+                    entryDatePart = entry.date;
+                }
+                
+                return entryDatePart === filterDate;
+            });
         }
         
         return filtered;

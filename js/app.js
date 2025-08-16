@@ -2216,6 +2216,7 @@ class PREPTrackerApp {
             filters.date = dateFilter.value;
         }
         
+        console.log('🟡 [DIARY] Applying diary filters:', filters);
         this.loadAndDisplayDiaryEntries(filters);
     }
     
@@ -3033,6 +3034,8 @@ class PREPTrackerApp {
         const notes = this.logQuill.root.innerHTML;
         const videoInput = document.getElementById('diaryEntryVideo');
         
+        console.log('🟡 [DIARY] Saving diary entry:', { date, behavior, milestone, notes: notes.substring(0, 50) + '...' });
+        
         // Validation
         if (!date || !behavior || !milestone || !notes.trim()) {
             this.showToast('Please fill in all required fields', 'error');
@@ -3046,6 +3049,8 @@ class PREPTrackerApp {
                 ageRange: milestone,
                 notes
             };
+            
+            console.log('🟡 [DIARY] Log data to save:', logData);
             
             // Handle video if uploaded
             if (this.currentVideoFile) {
@@ -3075,9 +3080,11 @@ class PREPTrackerApp {
                 // Update existing log entry
                 await window.storage.updateLogEntry(this.editingLogId, logData, this.currentPuppyId);
                 this.showToast('Training log entry updated successfully', 'success');
+                console.log('🟢 [DIARY] Entry updated successfully');
             } else {
                 // Create new log entry
-                await window.storage.saveLogEntry(logData, this.currentPuppyId);
+                const savedEntry = await window.storage.saveLogEntry(logData, this.currentPuppyId);
+                console.log('🟢 [DIARY] Entry saved successfully:', savedEntry);
                 this.showToast('Training log entry saved successfully', 'success');
             }
             
@@ -3087,10 +3094,11 @@ class PREPTrackerApp {
             this.closeNewDiaryModal();
             
             // Refresh the diary view with current filters
+            console.log('🟡 [DIARY] Applying filters to refresh diary view...');
             this.applyDiaryFilters();
             
         } catch (error) {
-            console.error('Failed to save log entry:', error);
+            console.error('🔴 [DIARY] Failed to save log entry:', error);
             this.showToast('Failed to save log entry', 'error');
         }
     }
