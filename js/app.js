@@ -2006,10 +2006,19 @@ class PREPTrackerApp {
     async renderDiaryView() {
         try {
             this.setupDiaryEventListeners();
+            this.setDiaryDateToToday();
             await this.loadAndDisplayDiaryEntries();
         } catch (error) {
             console.error('Failed to render diary view:', error);
             this.showToast('Failed to load diary entries', 'error');
+        }
+    }
+    
+    setDiaryDateToToday() {
+        const dateFilter = document.getElementById('diaryDateFilter');
+        if (dateFilter) {
+            const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+            dateFilter.value = today;
         }
     }
     
@@ -2066,8 +2075,15 @@ class PREPTrackerApp {
     
     async loadAndDisplayDiaryEntries(filters = {}) {
         try {
+            // If no date filter is provided, default to today's date
+            const actualFilters = { ...filters };
+            if (!actualFilters.date) {
+                const today = new Date().toISOString().split('T')[0];
+                actualFilters.date = today;
+            }
+            
             // For diary view, we use the same log entries but display them in a diary format
-            const entries = await window.storage.getFilteredLogEntries(this.currentPuppyId, filters);
+            const entries = await window.storage.getFilteredLogEntries(this.currentPuppyId, actualFilters);
             this.displayDiaryEntries(entries);
             this.updateDiaryStats(entries);
         } catch (error) {
@@ -3070,8 +3086,8 @@ class PREPTrackerApp {
             
             this.closeNewDiaryModal();
             
-            // Refresh the diary view
-            await this.loadAndDisplayDiaryEntries();
+            // Refresh the diary view with current filters
+            this.applyDiaryFilters();
             
         } catch (error) {
             console.error('Failed to save log entry:', error);
