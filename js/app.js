@@ -2832,7 +2832,7 @@ class PREPTrackerApp {
         document.getElementById('diaryEntryMilestone').value = '';
         
         // Use pending prefill if available, otherwise use provided prefill
-        const actualPrefill = this.pendingLogPrefill || prefill;
+        const actualPrefill = this.pendingDiaryPrefill || prefill;
         
         // Apply prefill parameters
         if (actualPrefill.behavior) document.getElementById('diaryEntryBehavior').value = actualPrefill.behavior;
@@ -2840,7 +2840,7 @@ class PREPTrackerApp {
         if (actualPrefill.date) document.getElementById('diaryEntryDate').value = actualPrefill.date;
         
         // Clear pending prefill once consumed
-        this.pendingLogPrefill = null;
+        this.pendingDiaryPrefill = null;
         
         // Initialize Quill editor - clear container completely first
         const editorContainer = document.getElementById('diaryEntryNotesEditor');
