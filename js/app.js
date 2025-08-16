@@ -2005,8 +2005,13 @@ class PREPTrackerApp {
     // Central Diary System Methods
     async renderDiaryView() {
         try {
+            // Initialize current diary date to today if not set
+            if (!this.currentDiaryDate) {
+                this.currentDiaryDate = new Date();
+            }
+            
             this.setupDiaryEventListeners();
-            this.setDiaryDateToToday();
+            this.setupDiarySwipeGestures();
             await this.loadAndDisplayDiaryEntries();
         } catch (error) {
             console.error('Failed to render diary view:', error);
@@ -2071,6 +2076,70 @@ class PREPTrackerApp {
             nextDayBtn.addEventListener('click', () => this.navigateToNextDay());
             nextDayBtn.setAttribute('data-listener-added', 'true');
         }
+    }
+    
+    setupDiarySwipeGestures() {
+        const diaryPage = document.querySelector('.diary-page');
+        if (!diaryPage || diaryPage.hasAttribute('data-swipe-listener-added')) {
+            return;
+        }
+        
+        let startX = 0;
+        let startY = 0;
+        let endX = 0;
+        let endY = 0;
+        
+        const minSwipeDistance = 50; // Minimum distance for a swipe
+        const maxVerticalDistance = 100; // Maximum vertical movement allowed
+        
+        diaryPage.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+        }, { passive: true });
+        
+        diaryPage.addEventListener('touchmove', (e) => {
+            // Prevent default scrolling if we detect a horizontal swipe
+            const touch = e.touches[0];
+            const currentX = touch.clientX;
+            const currentY = touch.clientY;
+            
+            const deltaX = Math.abs(currentX - startX);
+            const deltaY = Math.abs(currentY - startY);
+            
+            // If horizontal movement is greater than vertical, prevent default scrolling
+            if (deltaX > deltaY && deltaX > 20) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        diaryPage.addEventListener('touchend', (e) => {
+            const touch = e.changedTouches[0];
+            endX = touch.clientX;
+            endY = touch.clientY;
+            
+            const deltaX = endX - startX;
+            const deltaY = Math.abs(endY - startY);
+            
+            // Check if it's a valid horizontal swipe
+            if (Math.abs(deltaX) > minSwipeDistance && deltaY < maxVerticalDistance) {
+                if (deltaX > 0) {
+                    // Swipe right - navigate to previous day
+                    this.navigateToPreviousDay();
+                } else {
+                    // Swipe left - navigate to next day
+                    this.navigateToNextDay();
+                }
+            }
+            
+            // Reset coordinates
+            startX = 0;
+            startY = 0;
+            endX = 0;
+            endY = 0;
+        }, { passive: true });
+        
+        diaryPage.setAttribute('data-swipe-listener-added', 'true');
     }
     
     async loadAndDisplayDiaryEntries(filters = {}) {
@@ -2252,13 +2321,86 @@ class PREPTrackerApp {
     }
     
     navigateToPreviousDay() {
-        // Implement previous day navigation
-        this.showToast('Previous day navigation - coming soon!', 'info');
+        // Get the current date from the date filter or use today
+        const dateFilter = document.getElementById('diaryDateFilter');
+        let currentDate;
+        
+        if (dateFilter && dateFilter.value) {
+            currentDate = new Date(dateFilter.value);
+        } else {
+            currentDate = this.currentDiaryDate || new Date();
+        }
+        
+        // Navigate to previous day
+        currentDate.setDate(currentDate.getDate() - 1);
+        
+        // Update the date filter and diary date
+        this.currentDiaryDate = currentDate;
+        if (dateFilter) {
+            dateFilter.value = currentDate.toISOString().split('T')[0];
+        }
+        
+        // Update diary date header
+        this.updateDiaryDateHeader(currentDate);
+        
+        // Reload diary entries for the new date
+        this.applyDiaryFilters();
+        
+        // Show feedback
+        const formattedDate = currentDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric'
+        });
+        this.showToast(`Navigated to ${formattedDate}`, 'info');
     }
     
     navigateToNextDay() {
-        // Implement next day navigation
-        this.showToast('Next day navigation - coming soon!', 'info');
+        // Get the current date from the date filter or use today
+        const dateFilter = document.getElementById('diaryDateFilter');
+        let currentDate;
+        
+        if (dateFilter && dateFilter.value) {
+            currentDate = new Date(dateFilter.value);
+        } else {
+            currentDate = this.currentDiaryDate || new Date();
+        }
+        
+        // Navigate to next day
+        currentDate.setDate(currentDate.getDate() + 1);
+        
+        // Update the date filter and diary date
+        this.currentDiaryDate = currentDate;
+        if (dateFilter) {
+            dateFilter.value = currentDate.toISOString().split('T')[0];
+        }
+        
+        // Update diary date header
+        this.updateDiaryDateHeader(currentDate);
+        
+        // Reload diary entries for the new date
+        this.applyDiaryFilters();
+        
+        // Show feedback
+        const formattedDate = currentDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric'
+        });
+        this.showToast(`Navigated to ${formattedDate}`, 'info');
+    }
+    
+    updateDiaryDateHeader(date) {
+        const diaryDateHeader = document.getElementById('diaryDateHeader');
+        if (diaryDateHeader) {
+            const formattedDate = date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            diaryDateHeader.textContent = formattedDate;
+        }
     }
     
     showNewDiaryEntryModal(prefill = {}) {
