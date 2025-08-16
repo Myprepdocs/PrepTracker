@@ -308,9 +308,9 @@ class PREPTrackerApp {
                 this.showToast('Please select a puppy first', 'warning');
                 this.showView('puppies');
             }
-        } else if (viewName === 'logs') {
+        } else if (viewName === 'diary') {
             if (this.currentPuppyId) {
-                this.renderLogsView();
+                this.renderDiaryView();
             } else {
                 this.showToast('Please select a puppy first', 'warning');
                 this.showView('puppies');
@@ -776,11 +776,11 @@ class PREPTrackerApp {
             this.handleProgressChange(e, area);
         });
 
-        // Notes bar - redirect to central logging system
+        // Notes bar - redirect to central diary system
         const notesBar = element.querySelector('.notes-bar');
         notesBar.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.redirectToLogsWithFilter(area.id, this.currentAge);
+            this.redirectToDiaryWithFilter(area.id, this.currentAge);
         });
 
         // E-learning button
@@ -1979,36 +1979,265 @@ class PREPTrackerApp {
         };
     }
 
-    // Redirect to central logging system with filters
-    redirectToLogsWithFilter(behaviorId, milestone) {
+    // Redirect to diary view with filters
+    redirectToDiaryWithFilter(behaviorId, milestone) {
         if (!this.currentPuppyId) {
             this.showToast('Please select a puppy first', 'warning');
             return;
         }
 
-        // Switch to logs view
-        this.showView('logs');
+        // Switch to diary view
+        this.showView('diary');
         
         // Apply filters after the view is rendered
         setTimeout(() => {
-            document.getElementById('logBehaviorFilter').value = behaviorId;
-            document.getElementById('logMilestoneFilter').value = milestone;
-            this.applyLogFilters();
+            const behaviorFilter = document.getElementById('diaryBehaviorFilter');
+            const milestoneFilter = document.getElementById('diaryMilestoneFilter');
+            if (behaviorFilter) behaviorFilter.value = behaviorId;
+            if (milestoneFilter) milestoneFilter.value = milestone;
+            this.applyDiaryFilters();
         }, 100);
         
-        // Store context for new log modal
-        this.pendingLogPrefill = {behavior: behaviorId, milestone};
+        // Store context for new diary entry modal
+        this.pendingDiaryPrefill = {behavior: behaviorId, milestone};
     }
 
-    // Central Logging System Methods
-    async renderLogsView() {
+    // Central Diary System Methods
+    async renderDiaryView() {
         try {
-            this.setupLogsEventListeners();
-            await this.loadAndDisplayLogs();
+            this.setupDiaryEventListeners();
+            await this.loadAndDisplayDiaryEntries();
         } catch (error) {
-            console.error('Failed to render logs view:', error);
-            this.showToast('Failed to load training logs', 'error');
+            console.error('Failed to render diary view:', error);
+            this.showToast('Failed to load diary entries', 'error');
         }
+    }
+    
+    setupDiaryEventListeners() {
+        // Add new diary entry button
+        const addNewEntryBtn = document.getElementById('addNewDiaryEntry');
+        if (addNewEntryBtn && !addNewEntryBtn.hasAttribute('data-listener-added')) {
+            addNewEntryBtn.addEventListener('click', () => {
+                this.showNewDiaryEntryModal(this.pendingDiaryPrefill || {});
+            });
+            addNewEntryBtn.setAttribute('data-listener-added', 'true');
+        }
+        
+        // Filter controls
+        const behaviorFilter = document.getElementById('diaryBehaviorFilter');
+        const milestoneFilter = document.getElementById('diaryMilestoneFilter');
+        const dateFilter = document.getElementById('diaryDateFilter');
+        const clearFilters = document.getElementById('clearDiaryFilters');
+        
+        if (behaviorFilter && !behaviorFilter.hasAttribute('data-listener-added')) {
+            behaviorFilter.addEventListener('change', () => this.applyDiaryFilters());
+            behaviorFilter.setAttribute('data-listener-added', 'true');
+        }
+        
+        if (milestoneFilter && !milestoneFilter.hasAttribute('data-listener-added')) {
+            milestoneFilter.addEventListener('change', () => this.applyDiaryFilters());
+            milestoneFilter.setAttribute('data-listener-added', 'true');
+        }
+        
+        if (dateFilter && !dateFilter.hasAttribute('data-listener-added')) {
+            dateFilter.addEventListener('change', () => this.applyDiaryFilters());
+            dateFilter.setAttribute('data-listener-added', 'true');
+        }
+        
+        if (clearFilters && !clearFilters.hasAttribute('data-listener-added')) {
+            clearFilters.addEventListener('click', () => this.clearDiaryFilters());
+            clearFilters.setAttribute('data-listener-added', 'true');
+        }
+        
+        // Navigation buttons
+        const prevDayBtn = document.getElementById('prevDayBtn');
+        const nextDayBtn = document.getElementById('nextDayBtn');
+        
+        if (prevDayBtn && !prevDayBtn.hasAttribute('data-listener-added')) {
+            prevDayBtn.addEventListener('click', () => this.navigateToPreviousDay());
+            prevDayBtn.setAttribute('data-listener-added', 'true');
+        }
+        
+        if (nextDayBtn && !nextDayBtn.hasAttribute('data-listener-added')) {
+            nextDayBtn.addEventListener('click', () => this.navigateToNextDay());
+            nextDayBtn.setAttribute('data-listener-added', 'true');
+        }
+    }
+    
+    async loadAndDisplayDiaryEntries(filters = {}) {
+        try {
+            // For diary view, we use the same log entries but display them in a diary format
+            const entries = await window.storage.getFilteredLogEntries(this.currentPuppyId, filters);
+            this.displayDiaryEntries(entries);
+            this.updateDiaryStats(entries);
+        } catch (error) {
+            console.error('Failed to load diary entries:', error);
+            this.showEmptyDiaryMessage();
+        }
+    }
+    
+    displayDiaryEntries(entries) {
+        const diaryEntriesContainer = document.getElementById('diaryEntries');
+        
+        if (!entries || entries.length === 0) {
+            this.showEmptyDiaryMessage();
+            return;
+        }
+        
+        diaryEntriesContainer.innerHTML = entries.map(entry => this.createDiaryEntryHTML(entry)).join('');
+        
+        // Add event listeners to diary entry actions
+        this.addDiaryEntryEventListeners();
+    }
+    
+    createDiaryEntryHTML(entry) {
+        const behaviorInfo = this.trainingAreas.find(area => area.id === entry.trainingArea) || 
+                            { name: entry.trainingArea, icon: '📝' };
+        
+        const milestoneLabels = {
+            '12weeks': '3 Months (12 Weeks)',
+            'juvenile': '6 Months (Juvenile)', 
+            'adolescent': '9 Months (Adolescent)',
+            '12months': '12+ Months'
+        };
+        
+        const formattedDate = new Date(entry.date).toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long', 
+            day: 'numeric'
+        });
+        
+        const formattedTime = new Date(entry.date).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+        
+        return `
+            <div class="diary-entry" data-entry-id="${entry.id}">
+                <div class="diary-entry-header">
+                    <div class="diary-entry-subject">
+                        <span class="behavior-icon">${behaviorInfo.icon}</span>
+                        ${behaviorInfo.name}
+                    </div>
+                    <div class="diary-entry-meta">
+                        <span class="diary-entry-time">${formattedTime}</span>
+                        <span class="diary-entry-milestone">${milestoneLabels[entry.ageRange] || entry.ageRange}</span>
+                    </div>
+                </div>
+                
+                <div class="diary-entry-content">${entry.notes}</div>
+                
+                ${entry.video ? `
+                    <div class="diary-entry-actions">
+                        <button class="diary-video-btn" onclick="app.playVideo('${entry.video.reference}', '${entry.video.name}')" title="Play video">
+                            📹 View Video
+                        </button>
+                        <button class="diary-entry-edit-btn" data-entry-id="${entry.id}">Edit</button>
+                        <button class="diary-entry-delete-btn" data-entry-id="${entry.id}">Delete</button>
+                    </div>
+                ` : `
+                    <div class="diary-entry-actions">
+                        <button class="diary-entry-edit-btn" data-entry-id="${entry.id}">Edit</button>
+                        <button class="diary-entry-delete-btn" data-entry-id="${entry.id}">Delete</button>
+                    </div>
+                `}
+            </div>
+        `;
+    }
+    
+    addDiaryEntryEventListeners() {
+        const editBtns = document.querySelectorAll('.diary-entry-edit-btn');
+        const deleteBtns = document.querySelectorAll('.diary-entry-delete-btn');
+        
+        editBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const entryId = e.target.dataset.entryId;
+                this.editDiaryEntry(entryId);
+            });
+        });
+        
+        deleteBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const entryId = e.target.dataset.entryId;
+                this.deleteDiaryEntry(entryId);
+            });
+        });
+    }
+    
+    showEmptyDiaryMessage() {
+        const diaryEntriesContainer = document.getElementById('diaryEntries');
+        diaryEntriesContainer.innerHTML = `
+            <div class="diary-empty-state">
+                <div class="empty-diary-icon">📖</div>
+                <h3>No entries for this day</h3>
+                <p>Add your first diary entry to start tracking your puppy's progress.</p>
+                <button class="primary-btn" onclick="app.showNewDiaryEntryModal()">Add Entry</button>
+            </div>
+        `;
+    }
+    
+    updateDiaryStats(entries) {
+        // Update diary-specific stats if needed
+        // For now, we can use the same logic as logs
+        this.updateLogsStats(entries);
+    }
+    
+    applyDiaryFilters() {
+        const behaviorFilter = document.getElementById('diaryBehaviorFilter');
+        const milestoneFilter = document.getElementById('diaryMilestoneFilter');
+        const dateFilter = document.getElementById('diaryDateFilter');
+        
+        const filters = {};
+        if (behaviorFilter && behaviorFilter.value && behaviorFilter.value !== 'all') {
+            filters.behavior = behaviorFilter.value;
+        }
+        if (milestoneFilter && milestoneFilter.value && milestoneFilter.value !== 'all') {
+            filters.milestone = milestoneFilter.value;
+        }
+        if (dateFilter && dateFilter.value) {
+            filters.date = dateFilter.value;
+        }
+        
+        this.loadAndDisplayDiaryEntries(filters);
+    }
+    
+    clearDiaryFilters() {
+        const behaviorFilter = document.getElementById('diaryBehaviorFilter');
+        const milestoneFilter = document.getElementById('diaryMilestoneFilter');
+        const dateFilter = document.getElementById('diaryDateFilter');
+        
+        if (behaviorFilter) behaviorFilter.value = 'all';
+        if (milestoneFilter) milestoneFilter.value = 'all';
+        if (dateFilter) dateFilter.value = '';
+        
+        this.loadAndDisplayDiaryEntries();
+    }
+    
+    navigateToPreviousDay() {
+        // Implement previous day navigation
+        this.showToast('Previous day navigation - coming soon!', 'info');
+    }
+    
+    navigateToNextDay() {
+        // Implement next day navigation
+        this.showToast('Next day navigation - coming soon!', 'info');
+    }
+    
+    showNewDiaryEntryModal(prefill = {}) {
+        // For now, use the same modal as log entries but with diary-specific styling
+        this.showNewLogModal(prefill);
+    }
+    
+    async editDiaryEntry(entryId) {
+        // Use the same logic as editing log entries
+        await this.editLogEntry(entryId);
+    }
+    
+    async deleteDiaryEntry(entryId) {
+        // Use the same logic as deleting log entries
+        await this.deleteLogEntry(entryId);
     }
     
     setupLogsEventListeners() {
