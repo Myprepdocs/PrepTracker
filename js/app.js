@@ -2276,14 +2276,16 @@ class PREPTrackerApp {
         }
 
         try {
-            // Get API key from environment variable
-            const apiKey = this.getDeepgramApiKey();
+            // Get API key from environment variable (async)
+            const apiKey = await this.getDeepgramApiKey();
             if (!apiKey) {
-                console.warn('Deepgram API key not found, falling back to browser speech recognition');
+                console.warn('🔑 [DEEPGRAM] API key not found, falling back to browser speech recognition');
                 this.initFallbackVoiceRecognition();
                 return;
             }
 
+            console.log('🔑 [DEEPGRAM] API key retrieved successfully, initializing voice recognition...');
+            
             // Initialize Deepgram voice recognition
             this.deepgramVoice = new DeepgramVoiceRecognition();
             await this.deepgramVoice.initialize(apiKey);

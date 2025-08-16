@@ -259,89 +259,88 @@ class DeepgramVoiceRecognition {
         
         this.ws = new WebSocket(wsUrl, ['token', this.apiKey]);
 
-            this.ws.onopen = () => {
-                console.log('✅ [DEEPGRAM] Connected to Deepgram WebSocket successfully');
-                this.isConnected = true;
-                if (this.currentResolve) {
-                    this.currentResolve();
-                    this.currentResolve = null;
-                    this.currentReject = null;
-                }
-            };
+        this.ws.onopen = () => {
+            console.log('✅ [DEEPGRAM] Connected to Deepgram WebSocket successfully');
+            this.isConnected = true;
+            if (this.currentResolve) {
+                this.currentResolve();
+                this.currentResolve = null;
+                this.currentReject = null;
+            }
+        };
 
-            this.ws.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    this.handleDeepgramResponse(data);
-                } catch (error) {
-                    console.error('Failed to parse Deepgram response:', error);
-                }
-            };
+        this.ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                this.handleDeepgramResponse(data);
+            } catch (error) {
+                console.error('Failed to parse Deepgram response:', error);
+            }
+        };
 
-            this.ws.onerror = (error) => {
-                console.error('🚨 [DEEPGRAM] WebSocket error:', error);
-                this.isConnected = false;
-                if (this.currentReject) {
-                    this.currentReject(new Error('WebSocket connection failed'));
-                    this.currentResolve = null;
-                    this.currentReject = null;
-                }
-            };
+        this.ws.onerror = (error) => {
+            console.error('🚨 [DEEPGRAM] WebSocket error:', error);
+            this.isConnected = false;
+            if (this.currentReject) {
+                this.currentReject(new Error('WebSocket connection failed'));
+                this.currentResolve = null;
+                this.currentReject = null;
+            }
+        };
 
-            this.ws.onclose = (event) => {
-                console.log('🔌 [DEEPGRAM] WebSocket closed. Code:', event.code, 'Reason:', event.reason);
+        this.ws.onclose = (event) => {
+            console.log('🔌 [DEEPGRAM] WebSocket closed. Code:', event.code, 'Reason:', event.reason);
+            
+            // Check if we should try a fallback configuration
+            const shouldRetry = (event.code === 1003 || event.code === 4008 || event.code === 4009) && 
+                               this.connectionAttempt < this.configOptions.length - 1;
+            
+            if (shouldRetry) {
+                console.log('🔄 [DEEPGRAM] Trying fallback configuration...');
+                this.connectionAttempt++;
+                this.config = { ...this.configOptions[this.connectionAttempt] };
                 
-                // Check if we should try a fallback configuration
-                const shouldRetry = (event.code === 1003 || event.code === 4008 || event.code === 4009) && 
-                                   this.connectionAttempt < this.configOptions.length - 1;
-                
-                if (shouldRetry) {
-                    console.log('🔄 [DEEPGRAM] Trying fallback configuration...');
-                    this.connectionAttempt++;
-                    this.config = { ...this.configOptions[this.connectionAttempt] };
-                    
-                    setTimeout(() => {
-                        this.attemptConnection(this.currentResolve, this.currentReject);
-                    }, 1000);
-                    return;
+                setTimeout(() => {
+                    this.attemptConnection(this.currentResolve, this.currentReject);
+                }, 1000);
+                return;
+            }
+            
+            // Log specific error codes and reject with stored reference
+            if (this.currentReject) {
+                if (event.code === 1003) {
+                    console.error('🚨 [DEEPGRAM] Error 1003: Unsupported data or invalid parameters');
+                    this.currentReject(new Error('Invalid parameters sent to Deepgram API. All fallback configurations failed.'));
+                } else if (event.code === 1008) {
+                    console.error('🚨 [DEEPGRAM] Error 1008: Policy violation');
+                    this.currentReject(new Error('API request violated policy. Check API key and usage.'));
+                } else if (event.code === 4001) {
+                    console.error('🚨 [DEEPGRAM] Error 4001: Invalid API key');
+                    this.currentReject(new Error('Invalid Deepgram API key.'));
+                } else if (event.code === 4008) {
+                    console.error('🚨 [DEEPGRAM] Error 4008: Invalid language');
+                    this.currentReject(new Error('Language not supported. All language fallbacks failed.'));
+                } else if (event.code === 4009) {
+                    console.error('🚨 [DEEPGRAM] Error 4009: Invalid model');
+                    this.currentReject(new Error('Model not supported. All model fallbacks failed.'));
+                } else {
+                    this.currentReject(new Error('WebSocket connection failed with code: ' + event.code));
                 }
-                
-                // Log specific error codes and reject with stored reference
-                if (this.currentReject) {
-                    if (event.code === 1003) {
-                        console.error('🚨 [DEEPGRAM] Error 1003: Unsupported data or invalid parameters');
-                        this.currentReject(new Error('Invalid parameters sent to Deepgram API. All fallback configurations failed.'));
-                    } else if (event.code === 1008) {
-                        console.error('🚨 [DEEPGRAM] Error 1008: Policy violation');
-                        this.currentReject(new Error('API request violated policy. Check API key and usage.'));
-                    } else if (event.code === 4001) {
-                        console.error('🚨 [DEEPGRAM] Error 4001: Invalid API key');
-                        this.currentReject(new Error('Invalid Deepgram API key.'));
-                    } else if (event.code === 4008) {
-                        console.error('🚨 [DEEPGRAM] Error 4008: Invalid language');
-                        this.currentReject(new Error('Language not supported. All language fallbacks failed.'));
-                    } else if (event.code === 4009) {
-                        console.error('🚨 [DEEPGRAM] Error 4009: Invalid model');
-                        this.currentReject(new Error('Model not supported. All model fallbacks failed.'));
-                    } else {
-                        this.currentReject(new Error('WebSocket connection failed with code: ' + event.code));
-                    }
-                    this.currentResolve = null;
-                    this.currentReject = null;
-                }
-                
-                this.isConnected = false;
-            };
+                this.currentResolve = null;
+                this.currentReject = null;
+            }
+            
+            this.isConnected = false;
+        };
 
-            // Connection timeout
-            setTimeout(() => {
-                if (!this.isConnected && this.currentReject) {
-                    this.currentReject(new Error('Connection timeout'));
-                    this.currentResolve = null;
-                    this.currentReject = null;
-                }
-            }, 10000);
-        });
+        // Connection timeout
+        setTimeout(() => {
+            if (!this.isConnected && this.currentReject) {
+                this.currentReject(new Error('Connection timeout'));
+                this.currentResolve = null;
+                this.currentReject = null;
+            }
+        }, 10000);
     }
     
     /**
