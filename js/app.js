@@ -3062,8 +3062,18 @@ class PREPTrackerApp {
         }
         
         try {
+            // Create a proper timestamp by combining the date with current time
+            const currentTime = new Date();
+            const selectedDate = new Date(date);
+            
+            // Set the time components from current time to the selected date
+            selectedDate.setHours(currentTime.getHours());
+            selectedDate.setMinutes(currentTime.getMinutes());
+            selectedDate.setSeconds(currentTime.getSeconds());
+            selectedDate.setMilliseconds(currentTime.getMilliseconds());
+            
             const logData = {
-                date,
+                date: selectedDate.toISOString(), // Store as full ISO timestamp
                 trainingArea: behavior,
                 ageRange: milestone,
                 notes

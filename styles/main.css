@@ -141,39 +141,30 @@ body {
     position: relative;
 }
 
-/* Diary Date Header */
-.diary-date-header {
-    text-align: center;
-    margin-bottom: var(--spacing-xl);
-    padding: 0 var(--spacing-lg);
-}
-
-.diary-date {
-    font-size: 2.5rem;
-    font-weight: 300;
-    color: var(--text-primary);
-    margin: 0 0 var(--spacing-md) 0;
-    letter-spacing: -0.02em;
-    font-family: Georgia, 'Times New Roman', serif;
-}
-
-.diary-date-line {
-    height: 2px;
-    background: linear-gradient(90deg, transparent 0%, var(--border-medium) 20%, var(--border-medium) 80%, transparent 100%);
-    margin: var(--spacing-md) 0;
+/* Diary Page Date Header (inside diary page) */
+.diary-page-date-header {
+    padding: var(--spacing-lg) var(--spacing-lg) 0;
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-light);
     position: relative;
+    z-index: 3;
 }
 
-.diary-date-line::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 8px;
-    height: 8px;
-    background: var(--primary-blue);
-    border-radius: 50%;
+.diary-page-date {
+    font-size: 1.8rem;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-sm) 0;
+    font-family: 'Times New Roman', serif;
+    letter-spacing: 0.02em;
+    text-align: left;
+}
+
+.diary-page-date-line {
+    height: 1px;
+    background: var(--border-light);
+    width: 100%;
+    margin-top: var(--spacing-xs);
 }
 
 /* Diary Controls */
@@ -288,11 +279,6 @@ body {
 /* Diary Entries Container */
 .diary-entries {
     padding: var(--spacing-lg);
-    margin: var(--spacing-lg);
-    background: linear-gradient(145deg, #f7f5f2 0%, #f0ebe3 50%, #e8e0d6 100%);
-    border-radius: var(--radius-lg);
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-    min-height: 400px;
     position: relative;
     z-index: 2;
     max-height: 70vh;
