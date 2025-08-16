@@ -1,4 +1,5 @@
 {
+  "1.0.31": [],
   "1.0.30": [
     "Added automated version bump script for easier deployments",
     "Improved PWA update testing workflow"
