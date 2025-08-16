@@ -2268,8 +2268,113 @@ class PREPTrackerApp {
         if (activeFiltersDiv) activeFiltersDiv.remove();
     }
     
-    // Global voice recognition instance
-    initVoiceRecognition() {
+    // Initialize Deepgram voice recognition
+    async initDeepgramVoiceRecognition() {
+        // Don't reinitialize if already exists
+        if (this.deepgramVoice) {
+            return;
+        }
+
+        try {
+            // Get API key from environment variable
+            const apiKey = this.getDeepgramApiKey();
+            if (!apiKey) {
+                console.warn('Deepgram API key not found, falling back to browser speech recognition');
+                this.initFallbackVoiceRecognition();
+                return;
+            }
+
+            // Initialize Deepgram voice recognition
+            this.deepgramVoice = new DeepgramVoiceRecognition();
+            await this.deepgramVoice.initialize(apiKey);
+
+            // Set up callbacks
+            this.deepgramVoice.onTranscription((result) => {
+                this.handleDeepgramTranscription(result);
+            });
+
+            this.deepgramVoice.onStatusChange((status) => {
+                this.updateVoiceButtonState(status);
+            });
+
+            this.deepgramVoice.onError((error) => {
+                console.error('Deepgram error:', error);
+                this.showToast(error, 'error');
+                this.updateVoiceButtonState('error');
+            });
+
+            this.isDeepgramEnabled = true;
+            console.log('Deepgram voice recognition initialized successfully');
+
+        } catch (error) {
+            console.error('Failed to initialize Deepgram voice recognition:', error);
+            this.showToast('Falling back to browser voice recognition', 'info');
+            this.initFallbackVoiceRecognition();
+        }
+    }
+
+    // Get Deepgram API key from Netlify environment variables
+    async getDeepgramApiKey() {
+        console.log('🔑 [DEEPGRAM] Attempting to retrieve API key from environment...');
+        
+        try {
+            // In Netlify, environment variables are available at build time and runtime
+            // For client-side access, we need to use the Netlify Functions API or
+            // expose it during build time with REACT_APP_ prefix (but we're not using React)
+            
+            // Method 1: Try to get from window object if exposed during build
+            if (window.DEEPGRAM_API_KEY) {
+                console.log('🔑 [DEEPGRAM] API key found in window object');
+                return window.DEEPGRAM_API_KEY;
+            }
+            
+            // Method 2: Try Netlify Functions endpoint to securely get the key
+            try {
+                console.log('🔑 [DEEPGRAM] Attempting to fetch API key from Netlify Functions...');
+                const response = await fetch('/.netlify/functions/get-deepgram-key');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('🔑 [DEEPGRAM] API key successfully retrieved from Netlify Functions');
+                    return data.apiKey;
+                } else {
+                    console.warn('🔑 [DEEPGRAM] Netlify Functions endpoint not available or returned error:', response.status);
+                }
+            } catch (fetchError) {
+                console.warn('🔑 [DEEPGRAM] Netlify Functions not available:', fetchError.message);
+            }
+            
+            // Method 3: Fallback to localStorage for development
+            const storedKey = localStorage.getItem('DEEPGRAM_API_KEY');
+            if (storedKey) {
+                console.log('🔑 [DEEPGRAM] Using API key from localStorage (development mode)');
+                return storedKey;
+            }
+            
+            console.error('🔑 [DEEPGRAM] No API key found. Please ensure DEEPGRAM_API_KEY is set in Netlify environment variables');
+            return null;
+            
+        } catch (error) {
+            console.error('🔑 [DEEPGRAM] Error retrieving API key:', error);
+            return null;
+        }
+    }
+
+    // Handle Deepgram transcription results
+    handleDeepgramTranscription(result) {
+        const { text, isFinal, fullText, confidence } = result;
+        
+        if (isFinal) {
+            // Final text - commit to editor
+            this.insertVoiceTextFinal(text);
+            console.log('Final transcription:', text, 'Confidence:', confidence);
+        } else {
+            // Interim text - show preview
+            this.showInterimTranscription(text);
+        }
+    }
+
+    // Fallback to browser speech recognition
+    initFallbackVoiceRecognition() {
         // Don't reinitialize if already exists
         if (this.voiceRecognition) {
             return;
@@ -2296,7 +2401,7 @@ class PREPTrackerApp {
                     if (event.results && event.results[0] && event.results[0][0]) {
                         const transcript = event.results[0][0].transcript;
                         console.log('Transcript:', transcript);
-                        this.insertVoiceText(transcript);
+                        this.insertVoiceTextFinal(transcript);
                     }
                 };
                 
@@ -2331,7 +2436,8 @@ class PREPTrackerApp {
                     this.updateVoiceButtonState('idle');
                 };
                 
-                console.log('Voice recognition initialized successfully');
+                this.isDeepgramEnabled = false;
+                console.log('Fallback voice recognition initialized successfully');
             } catch (error) {
                 console.error('Failed to initialize voice recognition:', error);
                 this.voiceRecognition = null;
@@ -2370,53 +2476,96 @@ class PREPTrackerApp {
         }
     }
     
-    // Insert voice text into Quill editor
-    insertVoiceText(text) {
+    // Insert final voice text into Quill editor (for final transcriptions)
+    insertVoiceTextFinal(text) {
         if (this.logQuill || this.quill) {
-            this.updateVoiceButtonState('processing');
+            const editor = this.logQuill || this.quill;
+            const currentContent = editor.getText();
+            const newText = currentContent.trim() ? ` ${text}` : text;
             
-            setTimeout(() => {
-                const editor = this.logQuill || this.quill;
-                const currentContent = editor.getText();
-                const newText = currentContent.trim() ? ` ${text}` : text;
-                
+            // Insert at the end and remove the interim placeholder if present
+            if (this.currentInterimRange) {
+                editor.deleteText(this.currentInterimRange.index, this.currentInterimRange.length);
+                editor.insertText(this.currentInterimRange.index, newText);
+                this.currentInterimRange = null;
+            } else {
                 editor.insertText(editor.getLength() - 1, newText);
-                this.updateVoiceButtonState('idle');
-            }, 500);
+            }
         }
     }
+
+    // Show interim transcription (real-time preview)
+    showInterimTranscription(text) {
+        if (this.logQuill || this.quill) {
+            const editor = this.logQuill || this.quill;
+            
+            // Remove previous interim text
+            if (this.currentInterimRange) {
+                editor.deleteText(this.currentInterimRange.index, this.currentInterimRange.length);
+            }
+            
+            // Insert new interim text with different formatting
+            const currentLength = editor.getLength() - 1;
+            editor.insertText(currentLength, text, {
+                color: '#666',
+                italic: true
+            });
+            
+            // Store range for removal later
+            this.currentInterimRange = {
+                index: currentLength,
+                length: text.length
+            };
+        }
+    }
+
+    // Legacy insert method for backward compatibility
+    insertVoiceText(text) {
+        this.insertVoiceTextFinal(text);
+    }
     
-    // Toggle voice recording
-    toggleVoiceRecording() {
-        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            this.showToast('Voice recognition not supported in this browser', 'warning');
-            return;
+    // Toggle voice recording - now supports both Deepgram and fallback
+    async toggleVoiceRecording() {
+        // Initialize voice recognition if not done yet
+        if (!this.deepgramVoice && !this.voiceRecognition) {
+            await this.initDeepgramVoiceRecognition();
         }
-        
-        // Initialize if not already done
-        if (!this.voiceRecognition) {
-            this.initVoiceRecognition();
-        }
-        
-        if (!this.voiceRecognition) {
-            this.showToast('Failed to initialize voice recognition', 'error');
-            return;
-        }
-        
+
         try {
-            if (this.isRecognizing) {
-                this.voiceRecognition.stop();
-                this.isRecognizing = false;
-                this.updateVoiceButtonState('idle');
+            if (this.isDeepgramEnabled && this.deepgramVoice) {
+                // Use Deepgram WebSocket
+                if (this.deepgramVoice.getIsRecording()) {
+                    await this.deepgramVoice.stopRecording();
+                    this.isRecognizing = false;
+                } else {
+                    // Clear previous interim text when starting new recording
+                    this.currentInterimRange = null;
+                    await this.deepgramVoice.startRecording();
+                    this.isRecognizing = true;
+                }
+            } else if (this.voiceRecognition) {
+                // Use fallback browser speech recognition
+                if (this.isRecognizing) {
+                    this.voiceRecognition.stop();
+                    this.isRecognizing = false;
+                    this.updateVoiceButtonState('idle');
+                } else {
+                    this.voiceRecognition.start();
+                }
             } else {
-                this.voiceRecognition.start();
+                this.showToast('Voice recognition not available', 'warning');
             }
         } catch (error) {
-            console.error('Voice recognition error:', error);
-            this.showToast('Voice recognition failed: ' + error.message, 'error');
+            console.error('Voice recording error:', error);
+            this.showToast('Voice recording failed: ' + error.message, 'error');
             this.isRecognizing = false;
             this.updateVoiceButtonState('idle');
         }
+    }
+
+    // Initialize voice recognition (main entry point)
+    async initVoiceRecognition() {
+        await this.initDeepgramVoiceRecognition();
     }
 
     showNewLogModal(prefill = {}, editingLogId = null) {

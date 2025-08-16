@@ -2516,6 +2516,184 @@ body {
     font-weight: 600;
 }
 
+/* Real-time transcription styles */
+.ql-editor .ql-interim {
+    color: #666;
+    font-style: italic;
+    opacity: 0.8;
+    border-bottom: 1px dotted #ccc;
+}
+
+.voice-input-btn.connecting {
+    background: var(--warning-gradient);
+    animation: pulse 1s infinite;
+}
+
+.voice-input-btn.error {
+    background: var(--danger-gradient);
+    animation: none;
+}
+
+.voice-status.connecting {
+    color: var(--accent-gold);
+    font-weight: 600;
+}
+
+.voice-status.error {
+    color: var(--accent-red, #ef4444);
+    font-weight: 600;
+}
+
+/* Enhanced voice input container */
+.voice-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    transition: all var(--transition-fast);
+}
+
+.voice-input-container:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-blue-light);
+}
+
+.voice-input-container.active {
+    background: rgba(30, 64, 175, 0.05);
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.1);
+}
+
+/* Improved voice button */
+.voice-input-btn {
+    background: var(--primary-gradient);
+    color: var(--text-white);
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 1.3rem;
+    box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
+}
+
+.voice-input-btn:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-md);
+}
+
+.voice-input-btn:active {
+    transform: scale(0.95);
+}
+
+/* Enhanced status text */
+.voice-status {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    flex: 1;
+    min-width: 0;
+}
+
+.voice-status::before {
+    content: '•';
+    color: var(--text-light);
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.voice-status.listening::before {
+    color: var(--accent-orange);
+    animation: pulse-dot 1.5s infinite;
+}
+
+.voice-status.processing::before {
+    color: var(--accent-gold);
+    animation: pulse-dot 0.8s infinite;
+}
+
+.voice-status.connecting::before {
+    color: var(--accent-gold);
+    animation: pulse-dot 1s infinite;
+}
+
+.voice-status.error::before {
+    color: var(--accent-red, #ef4444);
+    animation: none;
+}
+
+@keyframes pulse-dot {
+    0%, 50%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    25%, 75% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}
+
+/* Real-time transcription indicator */
+.transcription-indicator {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    background: var(--success-color, #22c55e);
+    border: 2px solid white;
+    border-radius: 50%;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.voice-input-container.transcribing .transcription-indicator {
+    opacity: 1;
+    animation: pulse-indicator 1s infinite;
+}
+
+@keyframes pulse-indicator {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* Deepgram branding (subtle) */
+.voice-powered-by {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-align: right;
+    margin-top: var(--spacing-xs);
+    opacity: 0.6;
+}
+
+.voice-powered-by a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.voice-powered-by a:hover {
+    opacity: 0.8;
+}
+
 .video-upload-section {
     display: flex;
     flex-direction: column;
