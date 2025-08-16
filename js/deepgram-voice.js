@@ -15,19 +15,56 @@ class DeepgramVoiceRecognition {
         this.onTranscriptionCallback = null;
         this.onStatusChangeCallback = null;
         this.onErrorCallback = null;
+        this.connectionAttempt = 0;
         
-        // Configuration
-        this.config = {
-            sampleRate: 16000,
-            encoding: 'linear16',
-            channels: 1,
-            language: 'en-US',
-            model: 'nova-2',
-            smart_format: true,
-            interim_results: true,
-            endpointing: 300,
-            utterance_end_ms: 1000
-        };
+        // Configuration fallbacks in order of preference
+        this.configOptions = [
+            {
+                sampleRate: 16000,
+                encoding: 'linear16',
+                channels: 1,
+                language: 'en',
+                model: 'nova-2',
+                smart_format: true,
+                interim_results: true,
+                endpointing: 300,
+                utterance_end_ms: 1000
+            },
+            {
+                sampleRate: 16000,
+                encoding: 'linear16',
+                channels: 1,
+                language: 'en-US',
+                model: 'nova-2',
+                smart_format: true,
+                interim_results: true,
+                endpointing: 300,
+                utterance_end_ms: 1000
+            },
+            {
+                sampleRate: 16000,
+                encoding: 'linear16',
+                channels: 1,
+                language: 'en',
+                model: 'base',
+                smart_format: true,
+                interim_results: true,
+                endpointing: 300,
+                utterance_end_ms: 1000
+            },
+            {
+                sampleRate: 16000,
+                encoding: 'linear16',
+                channels: 1,
+                language: 'en-US',
+                model: 'base',
+                smart_format: true,
+                interim_results: true
+            }
+        ];
+        
+        // Start with the first configuration
+        this.config = { ...this.configOptions[0] };
 
         // Interim text tracking
         this.lastFinalText = '';
@@ -179,30 +216,57 @@ class DeepgramVoiceRecognition {
     }
 
     /**
-     * Connect to Deepgram WebSocket API
+     * Connect to Deepgram WebSocket API with fallback configurations
      */
     async connectToDeepgram() {
         return new Promise((resolve, reject) => {
-            const queryParams = new URLSearchParams({
-                encoding: this.config.encoding,
-                sample_rate: this.config.sampleRate,
-                channels: this.config.channels,
-                language: this.config.language,
-                model: this.config.model,
-                smart_format: this.config.smart_format,
-                interim_results: this.config.interim_results,
-                endpointing: this.config.endpointing,
-                utterance_end_ms: this.config.utterance_end_ms
-            });
+            this.attemptConnection(resolve, reject);
+        });
+    }
+    
+    /**
+     * Attempt connection with current config, with fallback to next config on failure
+     */
+    attemptConnection(resolve, reject) {
+        // Store resolve/reject for use in event handlers
+        this.currentResolve = resolve;
+        this.currentReject = reject;
+        
+        // Remove undefined values from config
+        const cleanConfig = {};
+        Object.keys(this.config).forEach(key => {
+            if (this.config[key] !== undefined) {
+                cleanConfig[key] = this.config[key];
+            }
+        });
+        
+        const queryParams = new URLSearchParams({
+            encoding: cleanConfig.encoding,
+            sample_rate: cleanConfig.sampleRate,
+            channels: cleanConfig.channels,
+            language: cleanConfig.language,
+            model: cleanConfig.model,
+            smart_format: cleanConfig.smart_format,
+            interim_results: cleanConfig.interim_results,
+            ...(cleanConfig.endpointing && { endpointing: cleanConfig.endpointing }),
+            ...(cleanConfig.utterance_end_ms && { utterance_end_ms: cleanConfig.utterance_end_ms })
+        });
 
-            const wsUrl = `wss://api.deepgram.com/v1/listen?${queryParams.toString()}`;
-            
-            this.ws = new WebSocket(wsUrl, ['token', this.apiKey]);
+        const wsUrl = `wss://api.deepgram.com/v1/listen?${queryParams.toString()}`;
+        console.log(`🔗 [DEEPGRAM] Connection attempt ${this.connectionAttempt + 1}/${this.configOptions.length}`);
+        console.log('🔗 [DEEPGRAM] WebSocket URL:', wsUrl);
+        console.log('🔗 [DEEPGRAM] Config:', cleanConfig);
+        
+        this.ws = new WebSocket(wsUrl, ['token', this.apiKey]);
 
             this.ws.onopen = () => {
-                console.log('Connected to Deepgram WebSocket');
+                console.log('✅ [DEEPGRAM] Connected to Deepgram WebSocket successfully');
                 this.isConnected = true;
-                resolve();
+                if (this.currentResolve) {
+                    this.currentResolve();
+                    this.currentResolve = null;
+                    this.currentReject = null;
+                }
             };
 
             this.ws.onmessage = (event) => {
@@ -215,26 +279,77 @@ class DeepgramVoiceRecognition {
             };
 
             this.ws.onerror = (error) => {
-                console.error('Deepgram WebSocket error:', error);
+                console.error('🚨 [DEEPGRAM] WebSocket error:', error);
                 this.isConnected = false;
-                reject(new Error('WebSocket connection failed'));
+                if (this.currentReject) {
+                    this.currentReject(new Error('WebSocket connection failed'));
+                    this.currentResolve = null;
+                    this.currentReject = null;
+                }
             };
 
             this.ws.onclose = (event) => {
-                console.log('Deepgram WebSocket closed:', event.code, event.reason);
-                this.isConnected = false;
-                if (this.isRecording) {
-                    this.handleError('Connection to Deepgram was lost');
+                console.log('🔌 [DEEPGRAM] WebSocket closed. Code:', event.code, 'Reason:', event.reason);
+                
+                // Check if we should try a fallback configuration
+                const shouldRetry = (event.code === 1003 || event.code === 4008 || event.code === 4009) && 
+                                   this.connectionAttempt < this.configOptions.length - 1;
+                
+                if (shouldRetry) {
+                    console.log('🔄 [DEEPGRAM] Trying fallback configuration...');
+                    this.connectionAttempt++;
+                    this.config = { ...this.configOptions[this.connectionAttempt] };
+                    
+                    setTimeout(() => {
+                        this.attemptConnection(this.currentResolve, this.currentReject);
+                    }, 1000);
+                    return;
                 }
+                
+                // Log specific error codes and reject with stored reference
+                if (this.currentReject) {
+                    if (event.code === 1003) {
+                        console.error('🚨 [DEEPGRAM] Error 1003: Unsupported data or invalid parameters');
+                        this.currentReject(new Error('Invalid parameters sent to Deepgram API. All fallback configurations failed.'));
+                    } else if (event.code === 1008) {
+                        console.error('🚨 [DEEPGRAM] Error 1008: Policy violation');
+                        this.currentReject(new Error('API request violated policy. Check API key and usage.'));
+                    } else if (event.code === 4001) {
+                        console.error('🚨 [DEEPGRAM] Error 4001: Invalid API key');
+                        this.currentReject(new Error('Invalid Deepgram API key.'));
+                    } else if (event.code === 4008) {
+                        console.error('🚨 [DEEPGRAM] Error 4008: Invalid language');
+                        this.currentReject(new Error('Language not supported. All language fallbacks failed.'));
+                    } else if (event.code === 4009) {
+                        console.error('🚨 [DEEPGRAM] Error 4009: Invalid model');
+                        this.currentReject(new Error('Model not supported. All model fallbacks failed.'));
+                    } else {
+                        this.currentReject(new Error('WebSocket connection failed with code: ' + event.code));
+                    }
+                    this.currentResolve = null;
+                    this.currentReject = null;
+                }
+                
+                this.isConnected = false;
             };
 
             // Connection timeout
             setTimeout(() => {
-                if (!this.isConnected) {
-                    reject(new Error('Connection timeout'));
+                if (!this.isConnected && this.currentReject) {
+                    this.currentReject(new Error('Connection timeout'));
+                    this.currentResolve = null;
+                    this.currentReject = null;
                 }
             }, 10000);
         });
+    }
+    
+    /**
+     * Reset connection attempt counter
+     */
+    resetConnectionAttempts() {
+        this.connectionAttempt = 0;
+        this.config = { ...this.configOptions[0] };
     }
 
     /**

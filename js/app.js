@@ -2540,6 +2540,8 @@ class PREPTrackerApp {
                 } else {
                     // Clear previous interim text when starting new recording
                     this.currentInterimRange = null;
+                    // Reset connection attempts for fresh start
+                    this.deepgramVoice.resetConnectionAttempts();
                     await this.deepgramVoice.startRecording();
                     this.isRecognizing = true;
                 }
