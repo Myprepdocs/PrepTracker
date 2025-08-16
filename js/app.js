@@ -2015,7 +2015,7 @@ class PREPTrackerApp {
     
     setupDiaryEventListeners() {
         // Add new diary entry button
-        const addNewEntryBtn = document.getElementById('addNewDiaryEntry');
+        const addNewEntryBtn = document.getElementById('addDiaryEntryBtn');
         if (addNewEntryBtn && !addNewEntryBtn.hasAttribute('data-listener-added')) {
             addNewEntryBtn.addEventListener('click', () => {
                 this.showNewDiaryEntryModal(this.pendingDiaryPrefill || {});
@@ -2226,8 +2226,8 @@ class PREPTrackerApp {
     }
     
     showNewDiaryEntryModal(prefill = {}) {
-        // For now, use the same modal as log entries but with diary-specific styling
-        this.showNewLogModal(prefill);
+        // Use diary modal with diary-specific styling
+        this.showNewDiaryModal(prefill);
     }
     
     async editDiaryEntry(entryId) {
@@ -2803,12 +2803,12 @@ class PREPTrackerApp {
         await this.initDeepgramVoiceRecognition();
     }
 
-    showNewLogModal(prefill = {}, editingLogId = null) {
-        const modal = document.getElementById('newLogModal');
-        const title = document.getElementById('newLogTitle');
+    showNewDiaryModal(prefill = {}, editingLogId = null) {
+        const modal = document.getElementById('newDiaryModal');
+        const title = document.getElementById('newDiaryTitle');
         
         // Set modal title based on whether we're editing or creating
-        title.textContent = editingLogId ? 'Edit Training Log Entry' : 'Add New Training Log Entry';
+        title.textContent = editingLogId ? 'Edit Diary Entry' : 'Add Diary Entry';
         
         // Scroll modal to top
         modal.scrollTop = 0;
@@ -2824,26 +2824,26 @@ class PREPTrackerApp {
         }
         
         // Setup modal event listeners
-        this.setupNewLogModalEventListeners();
+        this.setupNewDiaryModalEventListeners();
         
         // Reset form
-        document.getElementById('logEntryDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('logEntryBehavior').value = '';
-        document.getElementById('logEntryMilestone').value = '';
+        document.getElementById('diaryEntryDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('diaryEntryBehavior').value = '';
+        document.getElementById('diaryEntryMilestone').value = '';
         
         // Use pending prefill if available, otherwise use provided prefill
         const actualPrefill = this.pendingLogPrefill || prefill;
         
         // Apply prefill parameters
-        if (actualPrefill.behavior) document.getElementById('logEntryBehavior').value = actualPrefill.behavior;
-        if (actualPrefill.milestone) document.getElementById('logEntryMilestone').value = actualPrefill.milestone;
-        if (actualPrefill.date) document.getElementById('logEntryDate').value = actualPrefill.date;
+        if (actualPrefill.behavior) document.getElementById('diaryEntryBehavior').value = actualPrefill.behavior;
+        if (actualPrefill.milestone) document.getElementById('diaryEntryMilestone').value = actualPrefill.milestone;
+        if (actualPrefill.date) document.getElementById('diaryEntryDate').value = actualPrefill.date;
         
         // Clear pending prefill once consumed
         this.pendingLogPrefill = null;
         
         // Initialize Quill editor - clear container completely first
-        const editorContainer = document.getElementById('logEntryNotesEditor');
+        const editorContainer = document.getElementById('diaryEntryNotesEditor');
         editorContainer.innerHTML = ''; // Clear any existing content
         
         // Create a fresh div for Quill
@@ -2868,9 +2868,9 @@ class PREPTrackerApp {
         
         // Reset video upload
         this.currentVideoFile = null;
-        document.getElementById('logEntryVideo').value = '';
-        document.getElementById('logVideoPreview').style.display = 'none';
-        document.getElementById('logVideoUploadBtn').textContent = '📹 Choose Video File';
+        document.getElementById('diaryEntryVideo').value = '';
+        document.getElementById('diaryVideoPreview').style.display = 'none';
+        document.getElementById('diaryVideoUploadBtn').textContent = '📹 Choose Video File';
         
         // Apply video if editing and has video
         if (actualPrefill.video) {
@@ -2904,32 +2904,32 @@ class PREPTrackerApp {
         setTimeout(setContentWhenReady, 150);
     }
     
-    setupNewLogModalEventListeners() {
+    setupNewDiaryModalEventListeners() {
         // Close modal
-        const closeBtn = document.getElementById('closeNewLogModal');
-        const cancelBtn = document.getElementById('cancelLogEntry');
+        const closeBtn = document.getElementById('closeNewDiaryModal');
+        const cancelBtn = document.getElementById('cancelDiaryEntry');
         
         if (closeBtn && !closeBtn.hasAttribute('data-listener-added')) {
-            closeBtn.addEventListener('click', () => this.closeNewLogModal());
+            closeBtn.addEventListener('click', () => this.closeNewDiaryModal());
             closeBtn.setAttribute('data-listener-added', 'true');
         }
         
         if (cancelBtn && !cancelBtn.hasAttribute('data-listener-added')) {
-            cancelBtn.addEventListener('click', () => this.closeNewLogModal());
+            cancelBtn.addEventListener('click', () => this.closeNewDiaryModal());
             cancelBtn.setAttribute('data-listener-added', 'true');
         }
         
         // Save button
-        const saveBtn = document.getElementById('saveLogEntry');
+        const saveBtn = document.getElementById('saveDiaryEntry');
         if (saveBtn && !saveBtn.hasAttribute('data-listener-added')) {
-            saveBtn.addEventListener('click', () => this.saveNewLogEntry());
+            saveBtn.addEventListener('click', () => this.saveNewDiaryEntry());
             saveBtn.setAttribute('data-listener-added', 'true');
         }
         
         // Video upload
-        const videoUploadBtn = document.getElementById('logVideoUploadBtn');
-        const videoInput = document.getElementById('logEntryVideo');
-        const removeVideoBtn = document.getElementById('removeLogVideoBtn');
+        const videoUploadBtn = document.getElementById('diaryVideoUploadBtn');
+        const videoInput = document.getElementById('diaryEntryVideo');
+        const removeVideoBtn = document.getElementById('removeDiaryVideoBtn');
         
         if (videoUploadBtn && !videoUploadBtn.hasAttribute('data-listener-added')) {
             videoUploadBtn.addEventListener('click', (e) => {
@@ -2941,7 +2941,7 @@ class PREPTrackerApp {
         }
         
         if (videoInput && !videoInput.hasAttribute('data-listener-added')) {
-            videoInput.addEventListener('change', (e) => this.handleLogVideoUpload(e));
+            videoInput.addEventListener('change', (e) => this.handleDiaryVideoUpload(e));
             videoInput.setAttribute('data-listener-added', 'true');
         }
         
@@ -2949,7 +2949,7 @@ class PREPTrackerApp {
             removeVideoBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                this.removeLogVideo();
+                this.removeDiaryVideo();
             });
             removeVideoBtn.setAttribute('data-listener-added', 'true');
         }
@@ -2966,56 +2966,56 @@ class PREPTrackerApp {
         }
         
         // Close modal on outside click
-        const modal = document.getElementById('newLogModal');
+        const modal = document.getElementById('newDiaryModal');
         if (modal && !modal.hasAttribute('data-listener-added')) {
             modal.addEventListener('click', (e) => {
-                if (e.target.id === 'newLogModal') {
-                    this.closeNewLogModal();
+                if (e.target.id === 'newDiaryModal') {
+                    this.closeNewDiaryModal();
                 }
             });
             modal.setAttribute('data-listener-added', 'true');
         }
     }
     
-    handleLogVideoUpload(e) {
+    handleDiaryVideoUpload(e) {
         const file = e.target.files[0];
         if (file) {
             // Store the file reference for later use
             this.currentVideoFile = file;
-            document.getElementById('logVideoFileName').textContent = file.name;
-            document.getElementById('logVideoPreview').style.display = 'block';
-            document.getElementById('logVideoUploadBtn').textContent = '📹 Change Video File';
+            document.getElementById('diaryVideoFileName').textContent = file.name;
+            document.getElementById('diaryVideoPreview').style.display = 'block';
+            document.getElementById('diaryVideoUploadBtn').textContent = '📹 Change Video File';
         }
     }
     
-    removeLogVideo() {
+    removeDiaryVideo() {
         this.currentVideoFile = null;
-        document.getElementById('logEntryVideo').value = '';
-        document.getElementById('logVideoPreview').style.display = 'none';
-        document.getElementById('logVideoUploadBtn').textContent = '📹 Choose Video File';
+        document.getElementById('diaryEntryVideo').value = '';
+        document.getElementById('diaryVideoPreview').style.display = 'none';
+        document.getElementById('diaryVideoUploadBtn').textContent = '📹 Choose Video File';
     }
     
     displayVideoPreview(videoData, isExisting = false) {
         if (videoData) {
-            document.getElementById('logVideoFileName').textContent = videoData.name;
-            document.getElementById('logVideoPreview').style.display = 'block';
-            document.getElementById('logVideoUploadBtn').textContent = '📹 Change Video File';
+            document.getElementById('diaryVideoFileName').textContent = videoData.name;
+            document.getElementById('diaryVideoPreview').style.display = 'block';
+            document.getElementById('diaryVideoUploadBtn').textContent = '📹 Change Video File';
         }
     }
     
-    closeNewLogModal() {
-        document.getElementById('newLogModal').style.display = 'none';
+    closeNewDiaryModal() {
+        document.getElementById('newDiaryModal').style.display = 'none';
         if (this.logQuill) {
             this.logQuill = null;
         }
     }
     
-    async saveNewLogEntry() {
-        const date = document.getElementById('logEntryDate').value;
-        const behavior = document.getElementById('logEntryBehavior').value;
-        const milestone = document.getElementById('logEntryMilestone').value;
+    async saveNewDiaryEntry() {
+        const date = document.getElementById('diaryEntryDate').value;
+        const behavior = document.getElementById('diaryEntryBehavior').value;
+        const milestone = document.getElementById('diaryEntryMilestone').value;
         const notes = this.logQuill.root.innerHTML;
-        const videoInput = document.getElementById('logEntryVideo');
+        const videoInput = document.getElementById('diaryEntryVideo');
         
         // Validation
         if (!date || !behavior || !milestone || !notes.trim()) {
@@ -3068,10 +3068,10 @@ class PREPTrackerApp {
             // Clear editing state
             this.editingLogId = null;
             
-            this.closeNewLogModal();
+            this.closeNewDiaryModal();
             
-            // Refresh the logs view
-            await this.loadAndDisplayLogs();
+            // Refresh the diary view
+            await this.loadAndDisplayDiaryEntries();
             
         } catch (error) {
             console.error('Failed to save log entry:', error);
@@ -3089,7 +3089,7 @@ class PREPTrackerApp {
             }
             
             // Open the modal with existing data pre-filled
-            this.showNewLogModal({
+            this.showNewDiaryModal({
                 behavior: logEntry.trainingArea,
                 milestone: logEntry.ageRange,
                 date: logEntry.date,
