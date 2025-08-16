@@ -1,4 +1,15 @@
 {
+  "1.0.30": [
+    "Added automated version bump script for easier deployments",
+    "Improved PWA update testing workflow"
+  ],
+  "1.0.29": [
+    "Unified version management system - single source of truth for app version",
+    "Removed TEST_VERSION logic for cleaner production builds",
+    "Improved Progressive Web App update flow and cache invalidation",
+    "Enhanced service worker and client communication for better update experience",
+    "Automatic database cleanup when app version changes"
+  ],
   "1.0.25": [
     "Added a changelog modal to the app."
   ]

@@ -1,6 +1,8 @@
+import { APP_VERSION } from './version.js';
+
 class PREPTrackerApp {
     constructor() {
-        this.APP_VERSION = window.testData ? 'TEST_VERSION' : '1.0.29';
+        this.APP_VERSION = APP_VERSION;
         this.currentView = 'puppies';
         this.currentAge = '12weeks';
         this.currentPuppyId = null;

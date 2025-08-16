@@ -1,5 +1,7 @@
-const APP_VERSION = '1.0.29';
-const CACHE_NAME = `prep-tracker-v${APP_VERSION}`;
+// Import shared version constant
+importScripts('/js/version-sw.js');
+
+const CACHE_NAME = `prep-tracker-v${self.APP_VERSION}`;
 const DB_NAME = 'PREPTracker';
 const VERSION_STORAGE_KEY = 'prep_tracker_version';
 
@@ -10,7 +12,10 @@ const CACHE_URLS = [
   '/styles/main.css',
   '/js/storage.js',
   '/js/app.js',
+  '/js/version.js',
+  '/js/version-sw.js',
   '/data/test-data.js',
+  '/changelog.json',
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -165,14 +170,14 @@ self.addEventListener('message', (event) => {
 async function checkAndHandleVersionChange() {
   try {
     const storedVersion = await getStoredVersion();
-    console.log('Current app version:', APP_VERSION);
+    console.log('Current app version:', self.APP_VERSION);
     console.log('Stored version:', storedVersion);
     
-    if (!storedVersion || storedVersion !== APP_VERSION) {
+    if (!storedVersion || storedVersion !== self.APP_VERSION) {
       console.log('Version change detected, recreating IndexedDB database...');
       await recreateIndexedDB();
-      await setStoredVersion(APP_VERSION);
-      console.log('Database recreated for version:', APP_VERSION);
+      await setStoredVersion(self.APP_VERSION);
+      console.log('Database recreated for version:', self.APP_VERSION);
       
       const changelog = await getChangelog();
       if (changelog) {
@@ -200,7 +205,7 @@ async function getChangelog() {
       throw new Error('Failed to fetch changelog');
     }
     const changelog = await response.json();
-    return changelog[APP_VERSION];
+    return changelog[self.APP_VERSION];
   } catch (error) {
     console.error('Failed to get changelog:', error);
     return null;
