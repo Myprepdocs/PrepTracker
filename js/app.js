@@ -3657,7 +3657,6 @@ class PREPTrackerApp {
             this.showToast('Failed to load test data: ' + error.message, 'error');
         }
     }
-}
 
     // PWA Install functionality
     installPWA() {
