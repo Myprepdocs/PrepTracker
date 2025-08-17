@@ -155,6 +155,9 @@ class PREPTrackerApp {
             // Register service worker and handle updates
             await this.registerServiceWorker();
             
+            // Setup PWA install prompt handling
+            this.setupInstallPromptHandling();
+            
             // Check version compatibility
             this.checkVersionCompatibility();
             
@@ -247,6 +250,9 @@ class PREPTrackerApp {
         }
         
         document.getElementById('loadTestDataBtn').addEventListener('click', this.loadTestData.bind(this));
+
+        // PWA Install button
+        document.getElementById('installBtn').addEventListener('click', this.installPWA.bind(this));
 
         // Close modal on outside click
         document.getElementById('activityModal').addEventListener('click', (e) => {
@@ -3650,6 +3656,93 @@ class PREPTrackerApp {
             console.error('Failed to load test data:', error);
             this.showToast('Failed to load test data: ' + error.message, 'error');
         }
+    }
+}
+
+    // PWA Install functionality
+    installPWA() {
+        if (this.deferredPrompt) {
+            // Show the install prompt
+            this.deferredPrompt.prompt();
+            
+            // Wait for the user to respond to the prompt
+            this.deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                    this.showToast('App will be installed shortly', 'success');
+                } else {
+                    console.log('User dismissed the install prompt');
+                }
+                // Clear the deferredPrompt since it can only be used once
+                this.deferredPrompt = null;
+                this.hideInstallButton();
+            });
+        } else {
+            // If no deferred prompt, check if app is already installable
+            if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+                this.showToast('App is already installed', 'info');
+            } else {
+                this.showToast('Install option not available', 'info');
+            }
+        }
+    }
+
+    showInstallButton() {
+        const installBtn = document.getElementById('installBtn');
+        if (installBtn) {
+            installBtn.style.display = 'inline-flex';
+            console.log('Install button shown');
+        }
+    }
+
+    hideInstallButton() {
+        const installBtn = document.getElementById('installBtn');
+        if (installBtn) {
+            installBtn.style.display = 'none';
+            console.log('Install button hidden');
+        }
+    }
+
+    setupInstallPromptHandling() {
+        // Listen for the beforeinstallprompt event
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('beforeinstallprompt event fired');
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            this.deferredPrompt = e;
+            // Show the install button
+            this.showInstallButton();
+        });
+
+        // Listen for app installation
+        window.addEventListener('appinstalled', (e) => {
+            console.log('PWA was installed');
+            this.showToast('App installed successfully!', 'success');
+            // Hide the install button
+            this.hideInstallButton();
+            // Clear the deferredPrompt
+            this.deferredPrompt = null;
+        });
+
+        // Check if app is already installed
+        if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('App is running in standalone mode (already installed)');
+            this.hideInstallButton();
+        }
+
+        // For iOS devices, show install button if not already installed
+        if (this.isIOS() && !window.navigator.standalone) {
+            // On iOS, we can't detect the beforeinstallprompt event
+            // So we show the button with instructions
+            setTimeout(() => {
+                this.showInstallButton();
+            }, 2000); // Show after 2 seconds to let the user get familiar with the app
+        }
+    }
+
+    isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent);
     }
 }
 
