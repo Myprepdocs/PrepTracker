@@ -2319,14 +2319,6 @@ class PREPTrackerApp {
         
         // Reload diary entries for the new date
         this.applyDiaryFilters();
-        
-        // Show feedback
-        const formattedDate = currentDate.toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric'
-        });
-        this.showToast(`Navigated to ${formattedDate}`, 'info');
     }
     
     navigateToNextDay() {
@@ -2354,14 +2346,6 @@ class PREPTrackerApp {
         
         // Reload diary entries for the new date
         this.applyDiaryFilters();
-        
-        // Show feedback
-        const formattedDate = currentDate.toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric'
-        });
-        this.showToast(`Navigated to ${formattedDate}`, 'info');
     }
     
     updateDiaryDateHeader(date) {
