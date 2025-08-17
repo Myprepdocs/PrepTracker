@@ -65,7 +65,10 @@ The application serves as a digital companion for puppy raisers, allowing them t
 - **Individual Age Selection**: Each training area has radio buttons to select the relevant age stage
 - **Progress Sliders**: Visual percentage tracking (0-100%) for each area/age combination per puppy
 - **Milestone Text**: Age-specific behavioral expectations and goals
-- **Activity Logging**: Detailed training session records with dates, notes, and video attachments for each puppy
+- **Activity Logging**: Detailed training session records with dates, notes, and video attachments for each puppy. The system allows for rich, descriptive logs that capture the nuances of each training session. Examples of logged activities include:
+  - **Toileting Routine**: "Used designated area without prompting", "Responded to 'busy-busy' cue immediately", "Accident in house after 3 hours - need to adjust schedule".
+  - **Learning to Play**: "Gentle mouthing during tug play, redirected successfully", "Enjoyed interactive food toy for 20 minutes independently", "Showing improved 'drop it' response during play".
+  - **Greeting People**: "Remained calm when greeted by familiar visitor", "Four paws on floor when greeting children", "Successfully greeted elderly person without jumping".
 - **Data Separation**: All progress data is isolated per puppy profile
 
 ### 3. **Supporting Documents System**

@@ -241,10 +241,12 @@ class PREPTrackerApp {
             }
         });
         
-        // Debug tool (temporary)
+        // Debug tools
         if (document.getElementById('debugBtn')) {
             document.getElementById('debugBtn').addEventListener('click', this.debugActivities.bind(this));
         }
+        
+        document.getElementById('loadTestDataBtn').addEventListener('click', this.loadTestData.bind(this));
 
         // Close modal on outside click
         document.getElementById('activityModal').addEventListener('click', (e) => {
@@ -322,42 +324,14 @@ class PREPTrackerApp {
 
     async loadAllProfiles() {
         try {
-            if (window.testData) {
-                console.log("Using test data:", window.testData);
-                console.log("Test data profiles:", window.testData.profiles);
-                this.allProfiles = window.testData.profiles;
-                this.currentPuppyId = window.testData.currentProfileId;
-
-                // Populate storage with test data if it's not already there
-                for (const profile of window.testData.profiles) {
-                    await window.storage.saveProfile(profile, profile.id);
-                }
-                for (const key in window.testData.progress) {
-                    const [pId, area, age] = key.split('_');
-                    await window.storage.saveProgress(area, age, { value: window.testData.progress[key] }, pId);
-                }
-                for (const puppyId in window.testData.trainingLogs) {
-                    for (const log of window.testData.trainingLogs[puppyId]) {
-                        await window.storage.saveActivity(log, puppyId);
-                    }
-                }
-
-                if (this.currentPuppyId) {
-                    await this.selectPuppy(this.currentPuppyId);
-                } else if (this.allProfiles.length > 0) {
-                    await this.selectPuppy(this.allProfiles[0].id);
-                }
-
-            } else {
-                this.allProfiles = await window.storage.getAllProfiles();
-                
-                // Get current puppy from localStorage or use first available
-                const savedPuppyId = localStorage.getItem('currentPuppyId');
-                if (savedPuppyId && this.allProfiles.find(p => p.id === savedPuppyId)) {
-                    await this.selectPuppy(savedPuppyId);
-                } else if (this.allProfiles.length > 0) {
-                    await this.selectPuppy(this.allProfiles[0].id);
-                }
+            this.allProfiles = await window.storage.getAllProfiles();
+            
+            // Get current puppy from localStorage or use first available
+            const savedPuppyId = localStorage.getItem('currentPuppyId');
+            if (savedPuppyId && this.allProfiles.find(p => p.id === savedPuppyId)) {
+                await this.selectPuppy(savedPuppyId);
+            } else if (this.allProfiles.length > 0) {
+                await this.selectPuppy(this.allProfiles[0].id);
             }
         } catch (error) {
             console.error('Failed to load profiles:', error);
@@ -3635,6 +3609,62 @@ class PREPTrackerApp {
         } catch (error) {
             console.error('Failed to get changelog:', error);
             return null;
+        }
+    }
+
+    async loadTestData() {
+        if (!window.testData) {
+            this.showToast('Test data not available', 'warning');
+            return;
+        }
+        
+        const confirmed = confirm('This will load test data with multiple puppies and training logs. This action will not overwrite existing data but will add to it. Continue?');
+        if (!confirmed) return;
+        
+        try {
+            console.log("Loading test data:", window.testData);
+            console.log("Test data profiles:", window.testData.profiles);
+            
+            // Add test profiles to storage
+            for (const profile of window.testData.profiles) {
+                await window.storage.saveProfile(profile, profile.id);
+            }
+            
+            // Add test progress data
+            for (const key in window.testData.progress) {
+                const [pId, area, age] = key.split('_');
+                await window.storage.saveProgress(area, age, { value: window.testData.progress[key] }, pId);
+            }
+            
+            // Add test training logs
+            for (const puppyId in window.testData.trainingLogs) {
+                for (const log of window.testData.trainingLogs[puppyId]) {
+                    await window.storage.saveActivity(log, puppyId);
+                }
+            }
+            
+            // Refresh the app with new data
+            await this.loadAllProfiles();
+            
+            // Select the first test puppy if we don't have a current selection
+            if (!this.currentPuppyId && this.allProfiles.length > 0) {
+                await this.selectPuppy(this.allProfiles[0].id);
+            }
+            
+            // Refresh current view
+            if (this.currentView === 'puppies') {
+                this.renderPuppyManagement();
+            } else if (this.currentView === 'dashboard') {
+                this.renderDashboard();
+            } else if (this.currentView === 'progress') {
+                this.renderProgressGrid();
+            }
+            
+            this.showToast('Test data loaded successfully! Check the My Puppies section.', 'success');
+            
+        } catch (error) {
+            console.error('Failed to load test data:', error);
+            this.showToast('Failed to load test data: ' + error.message, 'error');
         }
     }
 }
