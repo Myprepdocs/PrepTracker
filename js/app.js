@@ -3801,7 +3801,6 @@ class PREPTrackerApp {
     isIOS() {
         return /iPad|iPhone|iPod/.test(navigator.userAgent);
     }
-}
 
     // Light haptic feedback helper
     vibrate(ms=10){
@@ -3995,6 +3994,7 @@ class PREPTrackerApp {
         const prog = await window.storage.getProgress(areaId, this.currentAge, this.currentPuppyId);
         label.textContent = typeof prog?.value === 'number' ? `${prog.value}%` : '—';
     }
+}
 
     // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
