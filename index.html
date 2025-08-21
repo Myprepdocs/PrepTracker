@@ -92,6 +92,70 @@
         <!-- Main Content -->
         <main class="main-content">
 
+            <!-- Mobile Home View (Training Areas list) -->
+            <div id="homeView" class="view" style="display: none;">
+                <div class="view-header">
+                    <h2>Training Areas</h2>
+                    <p>Tap an area to update progress and add notes</p>
+                </div>
+                <ul id="areasList" class="areas-list" aria-label="Training Areas">
+                    <!-- Rows injected by JS -->
+                </ul>
+            </div>
+
+            <!-- Mobile Area Detail View -->
+            <div id="areaView" class="view" style="display: none;">
+                <div class="area-header">
+                    <button id="areaBackBtn" class="nav-back" aria-label="Back">←</button>
+                    <h3 id="areaTitle">Area</h3>
+                    <div class="area-nav-arrows">
+                        <button id="areaPrevBtn" class="nav-arrow" aria-label="Previous">‹</button>
+                        <button id="areaNextBtn" class="nav-arrow" aria-label="Next">›</button>
+                    </div>
+                </div>
+                <div class="area-age-chips" id="areaAgeChips"></div>
+                <div class="milestone-card" id="areaMilestone"></div>
+                <div class="progress-control">
+                    <label class="slider-label">Progress: <span id="areaProgressValue" class="slider-value">0%</span></label>
+                    <input id="areaProgressSlider" type="range" class="progress-range" min="0" max="100" step="5" value="0" />
+                    <div class="progress-presets">
+                        <button class="delta-btn" data-delta="-10">−10%</button>
+                        <button class="delta-btn" data-delta="-5">−5%</button>
+                        <button class="delta-btn" data-delta="5">+5%</button>
+                        <button class="delta-btn" data-delta="10">+10%</button>
+                        <button class="delta-btn set-100" data-set="100">Set 100%</button>
+                    </div>
+                </div>
+                <section class="recent-notes">
+                    <div class="section-title-row">
+                        <h4>Recent Notes</h4>
+                        <button id="seeAllNotesBtn" class="link-btn">See all</button>
+                    </div>
+                    <div id="recentNotesList" class="notes-list"></div>
+                </section>
+                <form id="inlineComposer" class="composer" autocomplete="off">
+                    <input id="composerInput" type="text" placeholder="Add a note…" aria-label="Add a note" />
+                    <div class="composer__actions">
+                        <button type="button" class="tag" data-tag="Good">Good</button>
+                        <button type="button" class="tag" data-tag="Repeat">Repeat</button>
+                        <button type="button" class="tag" data-tag="Distraction">Distraction</button>
+                        <button type="submit" class="primary">Save</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Mobile Log View -->
+            <div id="logView" class="view" style="display: none;">
+                <div class="view-header logs">
+                    <h2 id="logsTitle">Diary</h2>
+                </div>
+                <div class="log-filters">
+                    <div class="chip-row" id="logAreaChips"></div>
+                </div>
+                <div id="logEntries" class="log-entries"></div>
+                <button id="logAddBtn" class="add-entry-btn">Add entry</button>
+            </div>
+
             <!-- Puppy Management View -->
             <div id="puppiesView" class="view">
                 <div class="view-header">
@@ -451,6 +515,29 @@
 
         </main>
 
+        <!-- Floating Action Button for Quick Log -->
+        <button id="fabQuickLog" class="fab" aria-label="Quick log">＋</button>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav" aria-label="Primary">
+            <button class="bottom-tab" data-route="home" aria-label="Home">
+                <span>🏠</span>
+                <small>Home</small>
+            </button>
+            <button class="bottom-tab" data-route="log" aria-label="Log">
+                <span>📝</span>
+                <small>Log</small>
+            </button>
+            <button class="bottom-tab" data-route="puppies" aria-label="Puppy">
+                <span>🦮</span>
+                <small>Puppy</small>
+            </button>
+            <button class="bottom-tab" data-route="tools" aria-label="Tools">
+                <span>🔧</span>
+                <small>Tools</small>
+            </button>
+        </nav>
+
         <!-- Activity Detail Modal -->
         <div id="activityModal" class="modal">
             <div class="modal-content">
@@ -554,6 +641,63 @@
                 <div class="modal-footer">
                     <button id="saveDiaryEntry" class="primary-btn">Save Diary Entry</button>
                     <button id="cancelDiaryEntry" class="secondary-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Log Modal -->
+        <div id="quickLogModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Quick Log</h3>
+                    <button id="closeQuickLogModal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="quickLogForm" class="quick-log-form">
+                        <div class="form-group">
+                            <label for="quickLogArea">Area *</label>
+                            <select id="quickLogArea" required>
+                                <option value="">Select area...</option>
+                                <option value="toileting">Toileting Routine</option>
+                                <option value="play">Learning to Play</option>
+                                <option value="greeting">Greeting People</option>
+                                <option value="manners">Learning Manners</option>
+                                <option value="transport">Travel and Transport</option>
+                                <option value="walking">Walking on a Lead</option>
+                                <option value="recall">Recall and Off Lead Exercise</option>
+                                <option value="handling">Handling, Grooming and Equipment</option>
+                                <option value="outing">Being Out and About</option>
+                                <option value="social">Social Behaviours and Settling</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Age</label>
+                            <div class="segmented quick-log-age">
+                                <button type="button" data-age="12weeks">3</button>
+                                <button type="button" data-age="juvenile">6</button>
+                                <button type="button" data-age="adolescent">9</button>
+                                <button type="button" data-age="12months">12+</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Progress</label>
+                            <div class="delta-controls">
+                                <button type="button" class="delta-btn" data-delta="-10">−10%</button>
+                                <button type="button" class="delta-btn" data-delta="-5">−5%</button>
+                                <span id="quickLogCurrentProgress" class="current-progress">40%</span>
+                                <button type="button" class="delta-btn" data-delta="5">+5%</button>
+                                <button type="button" class="delta-btn" data-delta="10">+10%</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="quickLogNote">Note</label>
+                            <textarea id="quickLogNote" rows="3" placeholder="What happened?"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button id="quickLogAttach" class="secondary-btn">Attach</button>
+                    <button id="quickLogSave" class="primary-btn">Save</button>
                 </div>
             </div>
         </div>

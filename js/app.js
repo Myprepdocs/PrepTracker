@@ -210,6 +210,36 @@ class PREPTrackerApp {
             });
         });
 
+        // Bottom nav routes
+        document.querySelectorAll('.bottom-tab').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const route = e.currentTarget.dataset.route;
+                this.navigateMobile(route);
+            });
+        });
+
+        document.getElementById('fabQuickLog')?.addEventListener('click', () => {
+            this.openQuickLog();
+        });
+
+        // Area view controls
+        const areaBackBtn = document.getElementById('areaBackBtn');
+        if (areaBackBtn) areaBackBtn.addEventListener('click', () => this.navigateMobile('home'));
+        document.getElementById('areaPrevBtn')?.addEventListener('click', () => this.stepArea(-1));
+        document.getElementById('areaNextBtn')?.addEventListener('click', () => this.stepArea(1));
+        document.getElementById('areaProgressSlider')?.addEventListener('input', (e) => {
+            const val = Number(e.target.value);
+            document.getElementById('areaProgressValue').textContent = `${val}%`;
+        });
+        document.querySelectorAll('.delta-btn')?.forEach(btn => {
+            btn.addEventListener('click', (e) => this.applyAreaDelta(e));
+        });
+        document.getElementById('inlineComposer')?.addEventListener('submit', (e) => this.saveInlineNote(e));
+
+        // Quick Log modal
+        document.getElementById('closeQuickLogModal')?.addEventListener('click', () => this.closeQuickLog());
+        document.getElementById('quickLogSave')?.addEventListener('click', () => this.saveQuickLog());
+
         // Profile form
         document.getElementById('profileForm').addEventListener('submit', this.handleProfileSave.bind(this));
         
@@ -263,6 +293,9 @@ class PREPTrackerApp {
     }
 
     async initializeViews() {
+        // Initialize mobile home list
+        this.renderHomeList();
+
         // Initialize progress grid
         await this.renderProgressGrid();
         
@@ -295,9 +328,31 @@ class PREPTrackerApp {
         document.querySelectorAll('.view').forEach(view => {
             view.style.display = 'none';
         });
-        document.getElementById(`${viewName}View`).style.display = 'block';
+        const nextEl = document.getElementById(`${viewName}View`);
+        nextEl.style.display = 'block';
+        // Lightweight fade-in transition
+        try {
+            nextEl.style.opacity = '0';
+            nextEl.style.willChange = 'opacity';
+            requestAnimationFrame(() => {
+                nextEl.style.transition = 'opacity 150ms ease';
+                nextEl.style.opacity = '1';
+                setTimeout(() => {
+                    nextEl.style.transition = '';
+                    nextEl.style.willChange = '';
+                }, 180);
+            });
+        } catch {}
 
         this.currentView = viewName;
+
+        // Update bottom nav selection
+        document.querySelectorAll('.bottom-tab').forEach(b => b.classList.remove('active'));
+        const map = { home: 'homeView', log: 'logView', puppies: 'puppiesView', tools: 'toolsView' };
+        Object.entries(map).forEach(([route, id]) => {
+            const tab = document.querySelector(`.bottom-tab[data-route="${route}"]`);
+            if (tab && `${viewName}View` === id) tab.classList.add('active');
+        });
 
         // Refresh data for specific views
         if (viewName === 'puppies') {
@@ -598,6 +653,7 @@ class PREPTrackerApp {
     async renderProgressGrid() {
         const grid = document.getElementById('progressGrid');
         grid.innerHTML = '';
+        // existing implementation continues...
         
         // Check if we should only show a specific behavior
         const shouldShowOnlyTarget = this.targetBehaviorFromDashboard;
@@ -986,6 +1042,8 @@ class PREPTrackerApp {
             console.error('Failed to save progress:', error);
             this.showToast('Failed to save progress', 'error');
         }
+        // Light haptic
+        this.vibrate(6);
     }
     
     async handleSingleClick(area, ageRange) {
@@ -3745,7 +3803,200 @@ class PREPTrackerApp {
     }
 }
 
-// Initialize app when DOM is ready
+    // Light haptic feedback helper
+    vibrate(ms=10){
+        try {
+            if (navigator.vibrate) navigator.vibrate(ms);
+        } catch {}
+    }
+
+    // Set up swipe gestures on Area view (left/right to switch areas)
+    setupAreaSwipeGestures(){
+        const container = document.getElementById('areaView');
+        if (!container || container.hasAttribute('data-swipe-listener-added')) return;
+        let startX=0,startY=0,endX=0,endY=0;
+        const minSwipe=50, maxVert=100;
+        container.addEventListener('touchstart',(e)=>{
+            const t = e.touches[0];
+            startX=t.clientX; startY=t.clientY;
+        }, {passive:true});
+        container.addEventListener('touchmove',(e)=>{
+            const t=e.touches[0];
+            const dx=Math.abs(t.clientX-startX); const dy=Math.abs(t.clientY-startY);
+            if (dx>dy && dx>20) e.preventDefault();
+        }, {passive:false});
+        container.addEventListener('touchend',(e)=>{
+            const t=e.changedTouches[0];
+            endX=t.clientX; endY=t.clientY;
+            const dx=endX-startX; const dy=Math.abs(endY-startY);
+            if (Math.abs(dx)>minSwipe && dy<maxVert){
+                if (dx<0) this.stepArea(1); else this.stepArea(-1);
+            }
+            startX=startY=endX=endY=0;
+        }, {passive:true});
+        container.setAttribute('data-swipe-listener-added','true');
+    }
+
+    // Mobile navigation helpers
+    navigateMobile(route) {
+        const viewMap = { home: 'home', log: 'diary', puppies: 'puppies', tools: 'tools' };
+        const view = viewMap[route] || 'home';
+        this.showView(view);
+        if (view === 'home') this.renderHomeList();
+        if (view === 'diary') this.renderDiaryView();
+    }
+
+    renderHomeList() {
+        const list = document.getElementById('areasList');
+        if (!list) return;
+        list.innerHTML = '';
+        this.trainingAreas.forEach((area, idx) => {
+            const li = document.createElement('li');
+            li.className = 'area-row';
+            li.innerHTML = `
+                <button class="area-row__main" data-area="${area.id}">
+                    <span class="area-row__icon">${area.icon}</span>
+                    <span class="area-row__title">${area.name}</span>
+                </button>
+                <div class="area-row__age">
+                    <div class="segmented">
+                        <button data-age="12weeks" aria-pressed="${this.currentAge==='12weeks'}">3</button>
+                        <button data-age="juvenile" aria-pressed="${this.currentAge==='juvenile'}">6</button>
+                        <button data-age="adolescent" aria-pressed="${this.currentAge==='adolescent'}">9</button>
+                        <button data-age="12months" aria-pressed="${this.currentAge==='12months'}">12+</button>
+                    </div>
+                </div>
+                <div class="area-row__progress">
+                    <div class="ring" id="ring-${area.id}">--</div>
+                    <small class="status" id="status-${area.id}"></small>
+                </div>
+            `;
+            // Handlers
+            li.querySelector('.area-row__main').addEventListener('click', () => this.openArea(area.id));
+            li.querySelectorAll('.segmented button').forEach(btn => btn.addEventListener('click', (e)=>{
+                const age = e.currentTarget.dataset.age;
+                this.currentAge = age;
+                this.renderHomeList();
+            }));
+            list.appendChild(li);
+        });
+        // Populate progress values
+        this.trainingAreas.forEach(async (area)=>{
+            const progress = await window.storage.getProgress(area.id, this.currentAge, this.currentPuppyId);
+            const val = progress?.value || 0;
+            const ring = document.getElementById(`ring-${area.id}`);
+            const status = document.getElementById(`status-${area.id}`);
+            if (ring) ring.textContent = `${val}%`;
+            if (status) status.textContent = val>=75? 'Well ahead' : val>=25? 'On track' : 'Review';
+        });
+    }
+
+    openArea(areaId){
+        this.activeAreaIndex = this.trainingAreas.findIndex(a=>a.id===areaId);
+        if (this.activeAreaIndex<0) this.activeAreaIndex=0;
+        this.renderAreaDetail();
+        this.showView('area');
+    }
+
+    stepArea(delta){
+        if (this.activeAreaIndex==null) this.activeAreaIndex=0;
+        const len=this.trainingAreas.length;
+        this.activeAreaIndex = (this.activeAreaIndex + delta + len) % len;
+        this.renderAreaDetail();
+        this.vibrate(8);
+    }
+
+    async renderAreaDetail(){
+        const area = this.trainingAreas[this.activeAreaIndex||0];
+        if (!area) return;
+        document.getElementById('areaTitle').textContent = area.name;
+        // Age chips
+        const chips = document.getElementById('areaAgeChips');
+        chips.innerHTML = ['12weeks','juvenile','adolescent','12months'].map(k=>`<button class="chip ${this.currentAge===k?'active':''}" data-age="${k}">${k==='12weeks'?'3':k==='juvenile'?'6':k==='adolescent'?'9':'12+'}</button>`).join('');
+        chips.querySelectorAll('.chip').forEach(btn=>btn.addEventListener('click',(e)=>{this.currentAge=e.currentTarget.dataset.age;this.renderAreaDetail();}));
+        // Milestone
+        document.getElementById('areaMilestone').textContent = area.milestones[this.currentAge];
+        // Progress
+        const prog = await window.storage.getProgress(area.id, this.currentAge, this.currentPuppyId);
+        const val = prog?.value || 0;
+        const slider = document.getElementById('areaProgressSlider');
+        slider.value = val; document.getElementById('areaProgressValue').textContent = `${val}%`;
+        slider.onchange = async (e)=>{
+            const v = Number(e.target.value);
+            await window.storage.saveProgress(area.id, this.currentAge, {value: v}, this.currentPuppyId);
+            this.showToast('Progress saved', 'success');
+        };
+        // Recent notes
+        const list = document.getElementById('recentNotesList');
+        const activities = (await window.storage.getActivities?.(area.id, this.currentAge, this.currentPuppyId))||[];
+        const recent = activities.slice(-3).reverse();
+        list.innerHTML = recent.map(a=>`<div class=\"diary-entry\"><div class=\"diary-entry-content\">${a.notes||''}</div><div class=\"diary-entry-meta\">${new Date(a.date).toLocaleString()}</div></div>`).join('') || '<div class=\"diary-empty-state\">No notes yet.</div>';
+        document.getElementById('seeAllNotesBtn').onclick = ()=>{ this.redirectToDiaryWithFilter(area.id, this.currentAge); };
+        // Inline composer context
+        this.inlineComposerAreaId = area.id;
+        // Enable swipe gestures on area view
+        this.setupAreaSwipeGestures();
+    }
+
+    applyAreaDelta(e){
+        const btn = e.currentTarget;
+        const delta = Number(btn.dataset.delta||0);
+        const set = btn.dataset.set? Number(btn.dataset.set): null;
+        const slider = document.getElementById('areaProgressSlider');
+        let v = set!=null? set : Math.max(0, Math.min(100, Number(slider.value)+delta));
+        slider.value = v; document.getElementById('areaProgressValue').textContent = `${v}%`;
+        slider.dispatchEvent(new Event('change'));
+    }
+
+    async saveInlineNote(e){
+        e.preventDefault();
+        const input = document.getElementById('composerInput');
+        const text = input.value.trim();
+        if (!text) return;
+        await window.storage.saveActivity({trainingArea: this.inlineComposerAreaId, ageRange: this.currentAge, date: new Date().toISOString(), notes: text}, this.currentPuppyId);
+        input.value='';
+        this.renderAreaDetail();
+        this.vibrate(10);
+    }
+
+    openQuickLog(){
+        const modal = document.getElementById('quickLogModal');
+        modal.style.display='flex';
+        const select = document.getElementById('quickLogArea');
+        // Defaults
+        if (select) {
+            // If the select has no value, set to current area
+            if (!select.value) select.value = this.trainingAreas[this.activeAreaIndex||0]?.id || '';
+            // Attach change listener once
+            if (!select.hasAttribute('data-listener-added')){
+                select.addEventListener('change', ()=> this.updateQuickLogProgress());
+                select.setAttribute('data-listener-added','true');
+            }
+        }
+        this.updateQuickLogProgress();
+    }
+    closeQuickLog(){ document.getElementById('quickLogModal').style.display='none'; }
+    async saveQuickLog(){
+        const area = document.getElementById('quickLogArea').value;
+        const note = document.getElementById('quickLogNote').value.trim();
+        if (!area) { this.showToast('Choose an area', 'warning'); return; }
+        if (note) {
+            await window.storage.saveActivity({trainingArea: area, ageRange: this.currentAge, date: new Date().toISOString(), notes: note}, this.currentPuppyId);
+        }
+        this.closeQuickLog();
+        this.showToast('Logged', 'success');
+        this.vibrate(12);
+    }
+
+    async updateQuickLogProgress(){
+        const areaId = document.getElementById('quickLogArea')?.value;
+        const label = document.getElementById('quickLogCurrentProgress');
+        if (!areaId || !label) return;
+        const prog = await window.storage.getProgress(areaId, this.currentAge, this.currentPuppyId);
+        label.textContent = typeof prog?.value === 'number' ? `${prog.value}%` : '—';
+    }
+
+    // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new PREPTrackerApp();
 });

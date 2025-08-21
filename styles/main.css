@@ -805,6 +805,7 @@ body {
 .app-container {
     min-height: 100vh;
     background: var(--bg-secondary);
+    padding-bottom: 72px; /* space for bottom nav */
 }
 
 /* Header */
@@ -2203,6 +2204,76 @@ body {
         max-width: none;
     }
 }
+
+/* Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 64px;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.bottom-tab {
+    background: none; border: none; color: var(--text-secondary);
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    font-size: 12px; padding: 6px 8px; border-radius: 10px;
+}
+.bottom-tab.active { color: var(--primary-blue); background: var(--bg-secondary);} 
+
+/* Floating Action Button */
+.fab {
+    position: fixed;
+    right: 16px;
+    bottom: 80px;
+    width: 56px; height: 56px; border-radius: 28px;
+    background: var(--primary-gradient);
+    color: var(--text-white);
+    border: none; box-shadow: var(--shadow-lg);
+    font-size: 28px; line-height: 1; display: flex; align-items: center; justify-content: center;
+}
+
+/* Home areas list */
+.areas-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.area-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: 12px; padding: 10px 12px; }
+.area-row__main { display:flex; gap:10px; align-items:center; background:none; border:none; text-align:left; }
+.area-row__icon { font-size: 20px; }
+.area-row__title { font-weight: 600; }
+.segmented { display:inline-flex; border:1px solid var(--border-light); border-radius:10px; overflow:hidden; }
+.segmented button { padding:4px 8px; background:var(--bg-primary); border:none; font-size:12px; }
+.segmented button[aria-pressed="true"] { background: var(--primary-blue); color: white; }
+.area-row__progress { text-align:right; }
+.ring { width:32px; height:32px; border-radius:16px; background:var(--bg-secondary); display:flex; align-items:center; justify-content:center; font-size:12px; }
+.status { display:block; font-size:11px; color: var(--text-secondary); }
+
+/* Area detail */
+.area-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.nav-back, .nav-arrow { background:none; border:none; font-size:18px; padding:8px; }
+.area-age-chips { display:flex; gap:8px; overflow-x:auto; padding:8px 0; }
+.area-age-chips .chip { border:1px solid var(--border-light); border-radius:999px; padding:6px 10px; background:var(--bg-primary); }
+.area-age-chips .chip.active { background: var(--primary-blue); color:white; }
+.milestone-card { background:var(--bg-primary); border:1px solid var(--border-light); border-radius:12px; padding:12px; max-height:40vh; overflow:auto; }
+.progress-control { margin-top:12px; }
+.progress-presets { display:flex; gap:8px; margin-top:6px; }
+.delta-btn, .set-100 { padding:6px 8px; border:1px solid var(--border-light); background:var(--bg-primary); border-radius:8px; }
+
+/* Composer */
+.composer { position: sticky; bottom: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(6px); padding: 8px; border-top:1px solid var(--border-light); display:flex; flex-direction:column; gap:6px; }
+.composer input { padding:10px; border:1px solid var(--border-light); border-radius:10px; }
+.composer__actions { display:flex; gap:8px; align-items:center; }
+.composer .tag { padding:4px 8px; border:1px solid var(--border-light); background:var(--bg-primary); border-radius:999px; font-size:12px; }
+.composer .primary { margin-left:auto; padding:8px 12px; border:none; border-radius:10px; background: var(--success-gradient); color:white; }
+
+/* Log */
+.log-filters { position: sticky; top: 0; background: var(--bg-secondary); padding: 8px 0; z-index: 1; }
+.chip-row { display:flex; gap:8px; overflow-x:auto; }
+.chip { border:1px solid var(--border-light); padding:6px 10px; border-radius:999px; background:var(--bg-primary); font-size:12px; white-space:nowrap; }
+.chip.active { background: var(--primary-blue); color:white; }
+.log-entries { display:flex; flex-direction:column; gap:10px; }
 
 /* Responsive Design */
 @media (max-width: 768px) {
